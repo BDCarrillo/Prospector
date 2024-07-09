@@ -145,13 +145,16 @@
     <None Include=".vs\VSWorkspaceState.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Data\Scripts\Prospector\Server.cs" />
+    <Compile Include="Data\Scripts\Prospector\SessionFields.cs" />
+    <Compile Include="Data\Scripts\Prospector\SessionServer.cs" />
     <Compile Include="Data\Scripts\Prospector\Networking.cs" />
-    <Compile Include="Data\Scripts\Prospector\HudAPIv2.cs" />
+    <Compile Include="Data\Scripts\Prospector\API\HudAPIv2.cs" />
     <Compile Include="Data\Scripts\Prospector\Configs.cs" />
+    <Compile Include="Data\Scripts\Prospector\SessionEvents.cs" />
     <Compile Include="Data\Scripts\Prospector\Settings.cs" />
     <Compile Include="Data\Scripts\Prospector\Draw.cs" />
     <Compile Include="Data\Scripts\Prospector\Prospector.cs" />
+    <Compile Include="Data\Scripts\Prospector\VoxelScans.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />
   <ProjectExtensions>

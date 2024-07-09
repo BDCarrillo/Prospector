@@ -22,17 +22,17 @@ namespace Prospector
         };
 
         [ProtoMember(1)]
-        public bool hideAsteroids { get; set; }
+        public bool hideAsteroids { get; set; } = false;
         [ProtoMember(2)]
-        public bool enableLabels { get; set; }
+        public bool enableLabels { get; set; } = true;
         [ProtoMember(3)]
-        public bool enableSymbols { get; set; }
+        public bool enableSymbols { get; set; } = true;
         [ProtoMember(4)]
-        public Color obsColor { get; set; }
+        public Color obsColor { get; set; } = Color.Goldenrod;
         [ProtoMember(5)]
-        public Color finishedColor { get; set; }
+        public Color finishedColor { get; set; } = Color.LawnGreen;
         [ProtoMember(6)]
-        public Color scanColor { get; set; }
+        public Color scanColor { get; set; } = Color.Yellow;
     }
     public partial class Session
     {
