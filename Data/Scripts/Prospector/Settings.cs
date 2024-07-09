@@ -1,0 +1,144 @@
+﻿using Draygo.API;
+using ProtoBuf;
+using Sandbox.ModAPI;
+using System;
+using System.IO;
+using VRageMath;
+
+namespace Prospector
+{
+    [ProtoContract]
+    public class Settings
+    {
+        public static Settings Instance;
+        public static readonly Settings Default = new Settings()
+        {
+            hideAsteroids = false,
+            enableLabels = true,
+            enableSymbols = true,
+            obsColor = Color.Goldenrod,
+            finishedColor = Color.LawnGreen,
+            scanColor = Color.Yellow,
+        };
+
+        [ProtoMember(1)]
+        public bool hideAsteroids { get; set; }
+        [ProtoMember(2)]
+        public bool enableLabels { get; set; }
+        [ProtoMember(3)]
+        public bool enableSymbols { get; set; }
+        [ProtoMember(4)]
+        public Color obsColor { get; set; }
+        [ProtoMember(5)]
+        public Color finishedColor { get; set; }
+        [ProtoMember(6)]
+        public Color scanColor { get; set; }
+    }
+    public partial class Session
+    {
+        private void InitConfig()
+        {
+            Settings s = Settings.Default;
+
+            var Filename = "UserSettings.cfg";
+            try
+            {
+                if (MyAPIGateway.Utilities.FileExistsInLocalStorage(Filename, typeof(Settings)))
+                {
+                    TextReader reader = MyAPIGateway.Utilities.ReadFileInLocalStorage(Filename, typeof(Settings));
+                    string text = reader.ReadToEnd();
+                    reader.Close();
+                    s = MyAPIGateway.Utilities.SerializeFromXML<Settings>(text);
+                    Save(s);
+                }
+                else
+                {
+                    Save(Settings.Default);
+                }
+            }
+            catch (Exception e)
+            {
+                Settings.Instance = Settings.Default;
+                s = Settings.Default;
+                Save(s);
+                MyAPIGateway.Utilities.ShowNotification("Prospector: Error with config file, overwriting with default." + e);
+            }
+        }
+        public static void Save(Settings settings)
+        {
+            var Filename = "UserSettings.cfg";
+            try
+            {
+                TextWriter writer;
+                writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(Filename, typeof(Settings));
+                writer.Write(MyAPIGateway.Utilities.SerializeToXML(settings));
+                writer.Close();
+                Settings.Instance = settings;
+            }
+            catch (Exception e)
+            {
+                MyAPIGateway.Utilities.ShowMessage("Prospector", "Error saving cfg file");
+            }
+        }
+
+        HudAPIv2.MenuRootCategory SettingsMenu;
+        HudAPIv2.MenuItem AsteroidEnable, SymbolEnableObs, LabelEnableObs, ShowConfigs;
+        HudAPIv2.MenuColorPickerInput ObsColor, FinishColor, ScanColor;
+        private void InitMenu()
+        {
+            SettingsMenu = new HudAPIv2.MenuRootCategory("Prospector", HudAPIv2.MenuRootCategory.MenuFlag.PlayerMenu, "Prospector Settings");
+            AsteroidEnable = new HudAPIv2.MenuItem("Hide asteroid display: " + Settings.Instance.hideAsteroids, SettingsMenu, ShowAsteroids);
+            SymbolEnableObs = new HudAPIv2.MenuItem("Show bounding box: " + Settings.Instance.enableSymbols, SettingsMenu, ShowSymbolsObs);
+            LabelEnableObs = new HudAPIv2.MenuItem("Show labels: " + Settings.Instance.enableLabels, SettingsMenu, ShowLabelsObs);
+            ObsColor = new HudAPIv2.MenuColorPickerInput("Set out of range asteroid symbol/text color >", SettingsMenu, Settings.Instance.obsColor, "Select color", ChangeObsColor);
+            ScanColor = new HudAPIv2.MenuColorPickerInput("Set in range but unscanned asteroid symbol/text color >", SettingsMenu, Settings.Instance.scanColor, "Select color", ChangeScanColor);
+            FinishColor = new HudAPIv2.MenuColorPickerInput("Set scanned symbol/text color >", SettingsMenu, Settings.Instance.finishedColor, "Select color", ChangeFinishedColor);
+            ShowConfigs = new HudAPIv2.MenuItem("Display configs (click here then hit enter to see info) >>", SettingsMenu, ShowCfgs);
+        }
+
+        private void ShowCfgs()
+        {
+            string d = "";
+            foreach (var scanner in scannerTypes)
+            {
+                var s = scanner.Value;
+                d += "Block SubType: " + s.subTypeID + "\n" +
+                    "  Display Distance:" + s.displayDistance + "m\n" +
+                    "  Scan Distance:" + s.scanDistance + "m\n" +
+                    "  Scan FOV:" + s.scanFOV + "\n" +
+                    "  Scan Spacing:" + s.scanSpacing + "m\n" +
+                    "  Scans per Tick:" + s.scansPerTick + "\n \n";
+            }            
+            MyAPIGateway.Utilities.ShowMissionScreen("Prospector Configs", "", "", d, null, "Close");
+        }
+
+        private void ChangeObsColor(Color obj)
+        {
+            Settings.Instance.obsColor = obj;
+        }
+        private void ChangeFinishedColor(Color obj)
+        {
+            Settings.Instance.finishedColor = obj;
+        }
+        private void ChangeScanColor(Color obj)
+        {
+            Settings.Instance.scanColor = obj;
+        }
+        private void ShowSymbolsObs()
+        {
+            Settings.Instance.enableSymbols = !Settings.Instance.enableSymbols;
+            SymbolEnableObs.Text = "Show bounding box: " + Settings.Instance.enableSymbols;
+        }
+        private void ShowAsteroids()
+        {
+            Settings.Instance.hideAsteroids = !Settings.Instance.hideAsteroids;
+            AsteroidEnable.Text = "Hide asteroid display: " + Settings.Instance.hideAsteroids;
+        }
+        private void ShowLabelsObs()
+        {
+            Settings.Instance.enableLabels = !Settings.Instance.enableLabels;
+            LabelEnableObs.Text = "Show labels: " + Settings.Instance.enableLabels;
+        }
+    }
+}
+
