@@ -173,7 +173,6 @@ namespace Prospector
                             closestPlanet = planet;
                         }
                     }
-
                 }
                 catch (Exception e)
                 {
@@ -187,6 +186,11 @@ namespace Prospector
 
         public override void UpdateBeforeSimulation()
         {
+            if (client && symbolHeight == 0)
+            {
+                aspectRatio = Session.Camera.ViewportSize.X / Session.Camera.ViewportSize.Y;
+                symbolHeight = symbolWidth * aspectRatio;
+            }
             if (client && tick % 300 == 0)
             {
                 if (!rcvdSettings && tick > 300 && tick % 120 == 0)

@@ -17,6 +17,8 @@ namespace Prospector
         internal int gridMaxDisplayDist = 0;
 
         internal MyStringId corner = MyStringId.GetOrCompute("SharpEdge"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
+        internal MyStringId missileOutline = MyStringId.GetOrCompute("MissileOutline"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
+        internal MyStringId frameCorner = MyStringId.GetOrCompute("FrameCorner"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal List<MyVoxelBase> obsList = new List<MyVoxelBase>();
         internal VRageRender.MyBillboard.BlendTypeEnum cornerBlend = VRageRender.MyBillboard.BlendTypeEnum.Standard;
         internal SerializableDictionary<MyVoxelBase, VoxelScan> voxelScans = new SerializableDictionary<MyVoxelBase, VoxelScan>();
@@ -36,5 +38,8 @@ namespace Prospector
         internal ulong serverID;
         internal string scanDataSaveFile = "ScanData";
         internal bool planetSuppress = true;
+        internal float symbolHeight = 0f;//Leave this as zero, monitor aspect ratio is figured in later
+        internal float aspectRatio = 0f;//Leave this as zero, monitor aspect ratio is figured in later
+        internal float symbolWidth = 0.03f;
     }
 }
