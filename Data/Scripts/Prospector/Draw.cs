@@ -1,7 +1,6 @@
 ﻿using Sandbox.ModAPI;
 using VRage.Game.Components;
 using VRageMath;
-using VRage.Game;
 using VRage.Utils;
 using System;
 using Draygo.API;
@@ -28,7 +27,8 @@ namespace Prospector
                     var viewProjectionMat = Session.Camera.ViewMatrix * Session.Camera.ProjectionMatrix;
                     var playerPos = controlledGrid.PositionComp.WorldAABB.Center;
                     var camMat = Session.Camera.WorldMatrix;
-                    var viewRay = new RayD(Session.Camera.Position, Session.Camera.WorldMatrix.Forward);
+                    
+                    var viewRay = new RayD(Session.Camera.Position, Session.Camera.WorldMatrix.Forward); //TODO fix for third person view
                     foreach (var keyValuePair in voxelScans.Dictionary)
                     {
                         var voxel = keyValuePair.Key;
@@ -60,7 +60,7 @@ namespace Prospector
                                 scanData.scanSpacing = currentScanner.Item2.scanSpacing;
                                 scanData.size = (voxel.StorageMax.X / currentScanner.Item2.scanSpacing + 1) * (voxel.StorageMax.Y / currentScanner.Item2.scanSpacing + 1) * (voxel.StorageMax.Z / currentScanner.Item2.scanSpacing + 1);
                             }
-
+                            var offset = voxel.PositionComp.WorldVolume.Center - voxel.PositionLeftBottomCorner; //Pushes the storage checks to bottom left corner as all storage is positive, world matrix refs center
                             if (scanData.scanPercent < 1)
                             {
                                 for (int i = 0; i < currentScanner.Item2.scansPerTick; i++) //Iterate spaces and check for ore
@@ -71,12 +71,9 @@ namespace Prospector
                                         scanData.scanPercent = 1;
                                         break;
                                     }
-                                    var worldCoord = Vector3D.Transform(nextScanPos, voxel.PositionComp.WorldMatrixRef);
+                                    
+                                    var worldCoord = Vector3D.Transform(nextScanPos, voxel.PositionComp.WorldMatrixRef) - offset;
                                     var material = voxel.GetMaterialAt(ref worldCoord);
-                                    //
-                                    //var localCoord = new Vector3I(scanData.nextScanPosX, scanData.nextScanPosY, scanData.nextScanPosZ);
-                                    //var material2 = voxel.Storage.GetMaterialAt(ref worldCoord);
-                                    //
                                     if (material != null && material.MinedOre != null)
                                     {
                                         if (!scanData.ore.Dictionary.ContainsKey(material.MinedOre))
