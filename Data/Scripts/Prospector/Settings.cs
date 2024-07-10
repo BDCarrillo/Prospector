@@ -98,18 +98,7 @@ namespace Prospector
 
         private void ShowCfgs()
         {
-            string d = "";
-            foreach (var scanner in scannerTypes)
-            {
-                var s = scanner.Value;
-                d += "Block SubType: " + s.subTypeID + "\n" +
-                    "  Display Distance:" + s.displayDistance + "m\n" +
-                    "  Scan Distance:" + s.scanDistance + "m\n" +
-                    "  Scan FOV:" + s.scanFOV + "\n" +
-                    "  Scan Spacing:" + s.scanSpacing + "m\n" +
-                    "  Scans per Tick:" + s.scansPerTick + "\n \n";
-            }            
-            MyAPIGateway.Utilities.ShowMissionScreen("Prospector Configs", "", "", d, null, "Close");
+            showConfigQueued = true;
         }
 
         private void ChangeObsColor(Color obj)

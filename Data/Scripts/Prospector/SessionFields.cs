@@ -41,5 +41,7 @@ namespace Prospector
         internal float symbolHeight = 0f;//Leave this as zero, monitor aspect ratio is figured in later
         internal float aspectRatio = 0f;//Leave this as zero, monitor aspect ratio is figured in later
         internal float symbolWidth = 0.03f;
+        internal int maxCheckDist = 10000;
+        internal bool showConfigQueued = false;
     }
 }

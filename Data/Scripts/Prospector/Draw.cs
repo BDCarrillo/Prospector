@@ -5,6 +5,8 @@ using VRage.Utils;
 using System;
 using Draygo.API;
 using System.Text;
+using VRage.Game.ModAPI;
+using VRage.Game;
 
 namespace Prospector
 {
@@ -27,11 +29,17 @@ namespace Prospector
                     var viewProjectionMat = Session.Camera.ViewMatrix * Session.Camera.ProjectionMatrix;
                     var playerPos = controlledGrid.PositionComp.WorldAABB.Center;
                     var camMat = Session.Camera.WorldMatrix;
-                    
-                    var viewRay = new RayD(Session.Camera.Position, Session.Camera.WorldMatrix.Forward); //TODO fix for third person view
+                    var PlayerCamera = MyAPIGateway.Session.IsCameraControlledObject;
+                    var cameraController = MyAPIGateway.Session.CameraController;
+                    var FirstPersonView = PlayerCamera && cameraController.IsInFirstPersonView;
+                    var entBlock = Session.Player.Controller.ControlledEntity.Entity as IMyCubeBlock;
+                    var crossHairPos = controlledGrid.GridIntegerToWorld(entBlock.Position + entBlock.PositionComp.LocalMatrixRef.Forward * 1000 / controlledGrid.GridSize);                   
+                    var viewRay = FirstPersonView ? new RayD(Session.Camera.Position, Session.Camera.WorldMatrix.Forward) :
+                        new RayD(Session.Camera.Position, Vector3D.Normalize(crossHairPos - Session.Camera.Position));
                     foreach (var keyValuePair in voxelScans.Dictionary)
                     {
                         var voxel = keyValuePair.Key;
+                        voxel.DebugDrawPhysics();
                         var scanData = keyValuePair.Value;
                         var position = voxel.PositionComp.WorldAABB.Center;
                         var screenCoords = Vector3D.Transform(position, viewProjectionMat);
@@ -143,7 +151,11 @@ namespace Prospector
             foreach (var ore in scanData.ore.Dictionary)
             {
                 if (ore.Key != "Stone")
-                info.AppendLine($"  {Math.Round((double)ore.Value / scanData.foundore * 100, 2)}% {ore.Key}");
+                {
+                    var amount = Math.Round((double)ore.Value / scanData.foundore * 100, 2);
+                    var text = amount > 0.00d ? amount + " %" : "Trace";
+                    info.AppendLine($"  {text} {ore.Key}");
+                }
             }
             var labelposition = new Vector2D(screenCoords.X, screenCoords.Y);
             var shadowOffset = new Vector2D(0.003, -0.003);

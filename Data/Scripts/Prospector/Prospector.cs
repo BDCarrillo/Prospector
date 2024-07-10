@@ -55,6 +55,7 @@ namespace Prospector
                 }
                 else
                     MyAPIGateway.Utilities.ShowMessage("Prospector", "overlay options can be found by hitting enter and F2");
+                maxCheckDist = (int)(Math.Max(Session.SessionSettings.SyncDistance, Session.SessionSettings.ViewDistance) * 0.95f);
             }
             if (server)
             {
@@ -113,7 +114,7 @@ namespace Prospector
                     if (!Settings.Instance.hideAsteroids && currentScanner.Item1 != null && currentScanner.Item1.IsWorking)
                     {
                         obsList.Clear();
-                        var tempSphere = new BoundingSphereD(gridPos, 25000); //TODO tie in to world settings, lesser of sync or render
+                        var tempSphere = new BoundingSphereD(gridPos, maxCheckDist);
                         //TODO consider reworking to a OnEntityCreate hook, this is probably garbo for performance
                         MyGamePruningStructure.GetAllVoxelMapsInSphere(ref tempSphere, obsList);
                         ValidateList(obsList);
@@ -191,6 +192,32 @@ namespace Prospector
                 aspectRatio = Session.Camera.ViewportSize.X / Session.Camera.ViewportSize.Y;
                 symbolHeight = symbolWidth * aspectRatio;
             }
+
+            if(showConfigQueued)
+            {
+                if(MyAPIGateway.Gui.ChatEntryVisible)
+                {
+                    MyAPIGateway.Utilities.ShowNotification("Hit Enter to close chat and display Prospector block configs", 16, "Red");
+                }   
+                else
+                {
+                    showConfigQueued = false;
+                    string d = "";
+                    foreach (var scanner in scannerTypes)
+                    {
+                        var s = scanner.Value;
+                        d += "Block SubType: " + s.subTypeID + "\n" +
+                            "  Display Distance:" + s.displayDistance + "m\n" +
+                            "  Scan Distance:" + s.scanDistance + "m\n" +
+                            "  Scan FOV:" + s.scanFOV + "\n" +
+                            "  Scan Spacing:" + s.scanSpacing + "m\n" +
+                            "  Scans per Tick:" + s.scansPerTick + "\n \n";
+                    }
+                    MyAPIGateway.Utilities.ShowMissionScreen("Prospector Configs", "", "", d, null, "Close");
+                }
+            }    
+
+
             if (client && tick % 300 == 0)
             {
                 if (!rcvdSettings && tick > 300 && tick % 120 == 0)
@@ -266,13 +293,9 @@ namespace Prospector
                 foreach (var temp in voxelScans.Dictionary)
                 {
                     if (voxelScanMemory.scans.Dictionary.ContainsKey(temp.Key.EntityId))
-                    {
                         voxelScanMemory.scans.Dictionary[temp.Key.EntityId] = temp.Value;
-                    }
                     else
-                    {
                         voxelScanMemory.scans.Dictionary.Add(temp.Key.EntityId, temp.Value);
-                    }
                 }
                 if (writeFile)
                 {

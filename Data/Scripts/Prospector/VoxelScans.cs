@@ -27,7 +27,7 @@ namespace Prospector
         public int scanSpacing { get; set; }
         [ProtoMember(7)]
         public int nextScanPosX { get; set; }
-        [ProtoMember(80)]
+        [ProtoMember(8)]
         public int nextScanPosY { get; set; }
         [ProtoMember(9)]
         public int nextScanPosZ { get; set; }
