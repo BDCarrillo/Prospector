@@ -38,6 +38,8 @@ namespace Prospector
         public Color scanColor { get; set; } = Color.Yellow;
         [ProtoMember(7)]
         public MyKeys expandedViewKey { get; set; } = MyKeys.LeftShift;
+        [ProtoMember(8)]
+        public Color expandedColor { get; set; } = Color.PowderBlue;
     }
     public partial class Session
     {

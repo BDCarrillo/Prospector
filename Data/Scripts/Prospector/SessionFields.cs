@@ -24,7 +24,9 @@ namespace Prospector
         internal MyStringId corner = MyStringId.GetOrCompute("SharpEdge"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId missileOutline = MyStringId.GetOrCompute("MissileOutline"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId frameCorner = MyStringId.GetOrCompute("FrameCorner"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
-        internal MyStringId _whiteDot = MyStringId.GetOrCompute("AnamorphicFlare");
+        internal MyStringId solidCircle = MyStringId.GetOrCompute("RoidCircle");
+        internal MyStringId hollowCircle = MyStringId.GetOrCompute("RoidCircleHollow");
+
         internal VRageRender.MyBillboard.BlendTypeEnum cornerBlend = VRageRender.MyBillboard.BlendTypeEnum.Standard;
         internal SerializableDictionary<MyVoxelBase, VoxelScan> voxelScans = new SerializableDictionary<MyVoxelBase, VoxelScan>();
         public static Dictionary<MyStringHash, ScannerConfig> scannerTypes = new Dictionary<MyStringHash, ScannerConfig>();

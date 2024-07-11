@@ -45,18 +45,17 @@ namespace Prospector
 
                     if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.LeftShift))
                     {
+                        //TODO onscreen label "Data Review - Scanner Paused" or similar
                         var ctrOffset = 0.25;
                         var sizeMult = 0.75f;
                         var topRightDraw = new Vector2D(ctrOffset, ctrOffset);
                         var topLeftDraw = new Vector2D(-ctrOffset, ctrOffset);
                         var botRightDraw = new Vector2D(ctrOffset, -ctrOffset);
                         var botLeftDraw = new Vector2D(-ctrOffset, -ctrOffset);
-                        var color = Color.PowderBlue;
-                        var topLeftSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, topLeftDraw, color, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
-                        var topRightSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, topRightDraw, color, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 1.5708f, HideHud: true, Shadowing: true);
-                        var botRightSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, botRightDraw, color, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 3.14159f, HideHud: true, Shadowing: true);
-                        var botLeftSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, botLeftDraw, color, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: -1.5708f, HideHud: true, Shadowing: true);
-
+                        var topLeftSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, topLeftDraw, s.expandedColor, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
+                        var topRightSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, topRightDraw, s.expandedColor, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 1.5708f, HideHud: true, Shadowing: true);
+                        var botRightSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, botRightDraw, s.expandedColor, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 3.14159f, HideHud: true, Shadowing: true);
+                        var botLeftSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, botLeftDraw, s.expandedColor, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: -1.5708f, HideHud: true, Shadowing: true);
                         var inbox = 0;
                         var foundOre = 0;
 
@@ -72,7 +71,7 @@ namespace Prospector
 
                             if (screenCoords.X < ctrOffset && screenCoords.X > -ctrOffset && screenCoords.Y < ctrOffset && screenCoords.Y > -ctrOffset)
                             {
-                                var ctrSymbolObj = new HudAPIv2.BillBoardHUDMessage(_whiteDot, new Vector2D(screenCoords.X, screenCoords.Y), color, Width: symbolWidth * 2, Height: symbolHeight * 2, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
+                                var ctrSymbolObj = new HudAPIv2.BillBoardHUDMessage(solidCircle, new Vector2D(screenCoords.X, screenCoords.Y), s.expandedColor, Width: symbolWidth*.75f, Height: symbolHeight*.75f, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
                                 inbox++;
                                 foundOre += scanData.foundore;
                                 foreach(var ore in scanData.ore.Dictionary)
@@ -85,6 +84,10 @@ namespace Prospector
                                         rollupList[ore.Key] = ore.Value;
                                 }
                             }
+                            else
+                            {
+                                var ctrSymbolObj = new HudAPIv2.BillBoardHUDMessage(hollowCircle, new Vector2D(screenCoords.X, screenCoords.Y), s.expandedColor, Width: symbolWidth*1.5f, Height: symbolHeight*1.5f, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
+                            }
                         }
                         var textList = new List<string>();
                         if(rollupList.Count > 0)
@@ -92,7 +95,7 @@ namespace Prospector
                             foreach(var ore in rollupList)
                             {
                                 var amount = Math.Round((double)ore.Value / foundOre * 100, 2);
-                                var info = $"  {ore.Key} {(amount > 0.00d ? amount + " %" : " - Trace")}";
+                                var info = $"  {ore.Key} {(amount > 0.00d ? amount + " %" : "- Trace")}";
                                 textList.Add(info);
                             }
                         }
@@ -103,7 +106,7 @@ namespace Prospector
                             finalText.Append(entry + "\n");
 
                         var label = new HudAPIv2.HUDMessage(finalText, topRightDraw, new Vector2D(.01, .025), 2, 1, true, true);
-                        label.InitialColor = color;
+                        label.InitialColor = s.expandedColor;
                         label.Visible = true;
                     }
                     else
