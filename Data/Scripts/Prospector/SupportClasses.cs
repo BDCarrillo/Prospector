@@ -1,5 +1,7 @@
 ﻿using ProtoBuf;
+using System.Collections.Generic;
 using VRage.Serialization;
+using VRageMath;
 
 namespace Prospector
 {
@@ -31,5 +33,33 @@ namespace Prospector
         public int nextScanPosY { get; set; }
         [ProtoMember(9)]
         public int nextScanPosZ { get; set; }
+    }
+
+    [ProtoContract]
+    public class ScannerConfigList
+    {
+        [ProtoMember(1)]
+        public List<ScannerConfig> cfgList { get; set; }
+        public void Clear()
+        {
+            cfgList.Clear();
+        }
+    }
+
+    [ProtoContract]
+    public class ScannerConfig
+    {
+        [ProtoMember(1)]
+        public int scansPerTick { get; set; }
+        [ProtoMember(2)]
+        public int scanDistance { get; set; }
+        [ProtoMember(3)]
+        public int scanSpacing { get; set; }
+        [ProtoMember(4)]
+        public int displayDistance { get; set; }
+        [ProtoMember(5)]
+        public string subTypeID { get; set; }
+        [ProtoMember(6)]
+        public int scanFOV { get; set; }
     }
 }

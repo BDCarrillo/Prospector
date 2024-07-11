@@ -7,6 +7,10 @@ using Draygo.API;
 using System.Text;
 using VRage.Game.ModAPI;
 using VRage.Game;
+using VRage.Collections;
+using System.Collections.Generic;
+using System.Runtime.InteropServices.ComTypes;
+using System.Diagnostics;
 
 namespace Prospector
 {
@@ -22,8 +26,8 @@ namespace Prospector
                 {
                     if (Session == null || Session.Player == null)
                     {
+                        MyAPIGateway.Utilities.ShowNotification($"[Prospector] Draw Session or player is null");
                         MyLog.Default.WriteLineAndConsole($"[Prospector] Draw Session or player is null");
-                        controlledGrid = null;
                         return;
                     }
                     var viewProjectionMat = Session.Camera.ViewMatrix * Session.Camera.ProjectionMatrix;
@@ -33,13 +37,80 @@ namespace Prospector
                     var cameraController = MyAPIGateway.Session.CameraController;
                     var FirstPersonView = PlayerCamera && cameraController.IsInFirstPersonView;
                     var entBlock = Session.Player.Controller.ControlledEntity.Entity as IMyCubeBlock;
-                    var crossHairPos = controlledGrid.GridIntegerToWorld(entBlock.Position + entBlock.PositionComp.LocalMatrixRef.Forward * 1000 / controlledGrid.GridSize);                   
+                    var crossHairPos = controlledGrid.GridIntegerToWorld(entBlock.Position + entBlock.PositionComp.LocalMatrixRef.Forward * 1000 / controlledGrid.GridSize);
+
                     var viewRay = FirstPersonView ? new RayD(Session.Camera.Position, Session.Camera.WorldMatrix.Forward) :
                         new RayD(Session.Camera.Position, Vector3D.Normalize(crossHairPos - Session.Camera.Position));
+
+
+                    if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.LeftShift))
+                    {
+                        var ctrOffset = 0.25;
+                        var sizeMult = 0.75f;
+                        var topRightDraw = new Vector2D(ctrOffset, ctrOffset);
+                        var topLeftDraw = new Vector2D(-ctrOffset, ctrOffset);
+                        var botRightDraw = new Vector2D(ctrOffset, -ctrOffset);
+                        var botLeftDraw = new Vector2D(-ctrOffset, -ctrOffset);
+                        var color = Color.PowderBlue;
+                        var topLeftSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, topLeftDraw, color, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
+                        var topRightSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, topRightDraw, color, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 1.5708f, HideHud: true, Shadowing: true);
+                        var botRightSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, botRightDraw, color, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 3.14159f, HideHud: true, Shadowing: true);
+                        var botLeftSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, botLeftDraw, color, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: -1.5708f, HideHud: true, Shadowing: true);
+
+                        var inbox = 0;
+                        var foundOre = 0;
+
+                        var rollupList = new Dictionary<string, int>();
+                        foreach (var keyValuePair in voxelScans.Dictionary)
+                        {
+                            var voxel = keyValuePair.Key;
+                            var scanData = keyValuePair.Value;
+                            var position = voxel.PositionComp.WorldAABB.Center;
+                            var screenCoords = Vector3D.Transform(position, viewProjectionMat);
+                            var offscreen = screenCoords.X > 1 || screenCoords.X < -1 || screenCoords.Y > 1 || screenCoords.Y < -1 || screenCoords.Z > 1;
+                            if (offscreen) continue;
+
+                            if (screenCoords.X < ctrOffset && screenCoords.X > -ctrOffset && screenCoords.Y < ctrOffset && screenCoords.Y > -ctrOffset)
+                            {
+                                var ctrSymbolObj = new HudAPIv2.BillBoardHUDMessage(_whiteDot, new Vector2D(screenCoords.X, screenCoords.Y), color, Width: symbolWidth * 2, Height: symbolHeight * 2, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
+                                inbox++;
+                                foundOre += scanData.foundore;
+                                foreach(var ore in scanData.ore.Dictionary)
+                                {
+                                    if (ore.Key == "Stone")
+                                        continue;
+                                    if (rollupList.ContainsKey(ore.Key))
+                                        rollupList[ore.Key] += ore.Value;
+                                    else
+                                        rollupList[ore.Key] = ore.Value;
+                                }
+                            }
+                        }
+                        var textList = new List<string>();
+                        if(rollupList.Count > 0)
+                        {
+                            foreach(var ore in rollupList)
+                            {
+                                var amount = Math.Round((double)ore.Value / foundOre * 100, 2);
+                                var info = $"  {ore.Key} {(amount > 0.00d ? amount + " %" : " - Trace")}";
+                                textList.Add(info);
+                            }
+                        }
+
+                        textList.Sort();
+                        var finalText = new StringBuilder();
+                        foreach(var entry in textList)
+                            finalText.Append(entry + "\n");
+
+                        var label = new HudAPIv2.HUDMessage(finalText, topRightDraw, new Vector2D(.01, .025), 2, 1, true, true);
+                        label.InitialColor = color;
+                        label.Visible = true;
+                    }
+                    else
+
                     foreach (var keyValuePair in voxelScans.Dictionary)
                     {
                         var voxel = keyValuePair.Key;
-                        voxel.DebugDrawPhysics();
                         var scanData = keyValuePair.Value;
                         var position = voxel.PositionComp.WorldAABB.Center;
                         var screenCoords = Vector3D.Transform(position, viewProjectionMat);
@@ -133,7 +204,8 @@ namespace Prospector
             }
             catch (Exception e)
             {
-                controlledGrid = null;
+                MyAPIGateway.Utilities.ShowNotification($"[Prospector] Draw exception");
+
                 MyLog.Default.WriteLineAndConsole($"[Prospector] Error while trying to draw {e}");
             }
         }
@@ -143,7 +215,7 @@ namespace Prospector
             var topRightPos = position + Session.Camera.WorldMatrix.Up * size + Session.Camera.WorldMatrix.Right * size;
             var screenCoords = Session.Camera.WorldToScreen(ref topRightPos);
             var info = new StringBuilder();
-            var distance = Vector3D.Distance(position, controlledGrid.PositionComp.WorldAABB.Center); //TODO pull this dist out from the normalize in the ProcessDraws method
+            var distance = Vector3D.Distance(position, controlledGrid.PositionComp.WorldAABB.Center);
             info.AppendLine($"  {(distance > 1000 ? (distance / 1000).ToString("0.0") + " km" : (int)distance + " m")}");
             if (scanData.scanPercent < 1) info.AppendLine($"  {Math.Round(scanData.scanPercent * 100, 0)}% {(scanning ? "Scanning" : "Scanned" )}");
             if (scanData.scanPercent < 1 && !inRange) info.AppendLine($"  {(tick % 60 <= 30 ? "Out Of Range": "")}");

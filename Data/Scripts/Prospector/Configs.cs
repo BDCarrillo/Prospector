@@ -7,36 +7,9 @@ using System;
 
 namespace Prospector
 {
-    [ProtoContract]
-    public class ScannerConfigList
-    {
-        [ProtoMember(1)]
-        public List<ScannerConfig> cfgList { get; set; }
-        public void Clear()
-        {
-            cfgList.Clear();
-        }
-    }
-
-    [ProtoContract]
-    public class ScannerConfig
-    {
-        [ProtoMember(1)]
-        public int scansPerTick { get; set; }
-        [ProtoMember(2)]
-        public int scanDistance { get; set; }
-        [ProtoMember(3)]
-        public int scanSpacing { get; set; }
-        [ProtoMember(4)]
-        public int displayDistance { get; set; }
-        [ProtoMember(5)]
-        public string subTypeID { get; set; }
-        [ProtoMember(6)]
-        public int scanFOV { get; set; }
-    }
     public partial class Session
     {
-        private void LoadConfigs(bool server = false)
+        private void LoadConfigs()
         {
             try
             {
@@ -50,8 +23,8 @@ namespace Prospector
                     serverList.cfgList.Clear();
                     foreach (var temp in scannerListTemp)
                     {
-                            serverList.cfgList.Add(temp);
-                            scannerTypes.Add(MyStringHash.GetOrCompute(temp.subTypeID), temp);
+                        serverList.cfgList.Add(temp);
+                        scannerTypes.Add(MyStringHash.GetOrCompute(temp.subTypeID), temp);
                     }
                     rcvdSettings = true;
                 }

@@ -6,6 +6,10 @@ using VRage.Game.Components;
 using VRage.Serialization;
 using VRage.Utils;
 using VRage;
+using Sandbox.ModAPI;
+using Sandbox.Game;
+using System.Collections.Concurrent;
+using VRage.Voxels;
 
 namespace Prospector
 {
@@ -15,11 +19,12 @@ namespace Prospector
         internal bool client;
         internal int tick = -300;
         internal int gridMaxDisplayDist = 0;
+        internal long gridMaxDisplayDistSqr = 0;
 
         internal MyStringId corner = MyStringId.GetOrCompute("SharpEdge"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId missileOutline = MyStringId.GetOrCompute("MissileOutline"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId frameCorner = MyStringId.GetOrCompute("FrameCorner"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
-        internal List<MyVoxelBase> obsList = new List<MyVoxelBase>();
+        internal MyStringId _whiteDot = MyStringId.GetOrCompute("AnamorphicFlare");
         internal VRageRender.MyBillboard.BlendTypeEnum cornerBlend = VRageRender.MyBillboard.BlendTypeEnum.Standard;
         internal SerializableDictionary<MyVoxelBase, VoxelScan> voxelScans = new SerializableDictionary<MyVoxelBase, VoxelScan>();
         public static Dictionary<MyStringHash, ScannerConfig> scannerTypes = new Dictionary<MyStringHash, ScannerConfig>();
@@ -28,13 +33,13 @@ namespace Prospector
         internal double currentScannerFOVLimit = 0;
         internal VoxelScanDict voxelScanMemory = new VoxelScanDict();
         internal string scannerCfg = "ScannerConfigs.cfg";
-        internal MyPlanet closestPlanet;
         public static Networking Networking = new Networking(5860);
         public static ScannerConfigList serverList = new ScannerConfigList();
         public static bool rcvdSettings = false;
         internal bool registeredController = false;
         internal int clientAttempts = 0;
         internal bool server;
+        internal bool mpActive;
         internal ulong serverID;
         internal string scanDataSaveFile = "ScanData";
         internal bool planetSuppress = true;
@@ -43,5 +48,32 @@ namespace Prospector
         internal float symbolWidth = 0.03f;
         internal int maxCheckDist = 10000;
         internal bool showConfigQueued = false;
+        internal ConcurrentDictionary<MyVoxelBase, byte> newRoids = new ConcurrentDictionary<MyVoxelBase, byte>();
+        private void Clean()
+        {
+            if (client)
+            {
+                SaveScans(true);
+                controlledGrid = null;
+                MyAPIGateway.Utilities.MessageEnteredSender -= OnMessageEnteredSender;
+                Save(Settings.Instance);
+                if (hudAPI != null)
+                    hudAPI.Unload();
+                voxelScans.Dictionary.Clear();
+                voxelScanMemory.scans.Dictionary.Clear();
+                scannerTypes.Clear();
+                if (registeredController)
+                    MyAPIGateway.Session.Player.Controller.ControlledEntityChanged -= GridChange;
+                MyEntities.OnEntityCreate -= OnEntityCreate;
+                newRoids.Clear();
+            }
+            if (server)
+            {
+                serverList.Clear();
+                MyVisualScriptLogicProvider.PlayerConnected -= PlayerConnected;
+            }
+            Networking?.Unregister();
+            Networking = null;
+        }
     }
 }

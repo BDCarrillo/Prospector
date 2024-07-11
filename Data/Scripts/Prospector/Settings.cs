@@ -3,6 +3,8 @@ using ProtoBuf;
 using Sandbox.ModAPI;
 using System;
 using System.IO;
+using VRage.Input;
+using VRage.Utils;
 using VRageMath;
 
 namespace Prospector
@@ -19,6 +21,7 @@ namespace Prospector
             obsColor = Color.Goldenrod,
             finishedColor = Color.LawnGreen,
             scanColor = Color.Yellow,
+            expandedViewKey = MyKeys.LeftShift,
         };
 
         [ProtoMember(1)]
@@ -33,6 +36,8 @@ namespace Prospector
         public Color finishedColor { get; set; } = Color.LawnGreen;
         [ProtoMember(6)]
         public Color scanColor { get; set; } = Color.Yellow;
+        [ProtoMember(7)]
+        public MyKeys expandedViewKey { get; set; } = MyKeys.LeftShift;
     }
     public partial class Session
     {
@@ -48,7 +53,10 @@ namespace Prospector
                     TextReader reader = MyAPIGateway.Utilities.ReadFileInLocalStorage(Filename, typeof(Settings));
                     string text = reader.ReadToEnd();
                     reader.Close();
-                    s = MyAPIGateway.Utilities.SerializeFromXML<Settings>(text);
+                    if (text.Length == 0)
+                        s = Settings.Default;
+                    else
+                        s = MyAPIGateway.Utilities.SerializeFromXML<Settings>(text);
                     Save(s);
                 }
                 else

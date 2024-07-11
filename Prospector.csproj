@@ -153,8 +153,8 @@
     <Compile Include="Data\Scripts\Prospector\SessionEvents.cs" />
     <Compile Include="Data\Scripts\Prospector\Settings.cs" />
     <Compile Include="Data\Scripts\Prospector\Draw.cs" />
-    <Compile Include="Data\Scripts\Prospector\Prospector.cs" />
-    <Compile Include="Data\Scripts\Prospector\VoxelScans.cs" />
+    <Compile Include="Data\Scripts\Prospector\SessionRun.cs" />
+    <Compile Include="Data\Scripts\Prospector\SupportClasses.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />
   <ProjectExtensions>
