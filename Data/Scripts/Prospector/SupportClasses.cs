@@ -1,7 +1,6 @@
 ﻿using ProtoBuf;
 using System.Collections.Generic;
 using VRage.Serialization;
-using VRageMath;
 
 namespace Prospector
 {
@@ -56,10 +55,8 @@ namespace Prospector
         [ProtoMember(3)]
         public int scanSpacing { get; set; }
         [ProtoMember(4)]
-        public int displayDistance { get; set; }
-        [ProtoMember(5)]
         public string subTypeID { get; set; }
-        [ProtoMember(6)]
+        [ProtoMember(5)]
         public int scanFOV { get; set; }
     }
 }

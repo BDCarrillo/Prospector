@@ -4,7 +4,6 @@ using Sandbox.ModAPI;
 using System;
 using System.IO;
 using VRage.Input;
-using VRage.Utils;
 using VRageMath;
 
 namespace Prospector
@@ -93,7 +92,7 @@ namespace Prospector
 
         HudAPIv2.MenuRootCategory SettingsMenu;
         HudAPIv2.MenuItem AsteroidEnable, SymbolEnableObs, LabelEnableObs, ShowConfigs;
-        HudAPIv2.MenuColorPickerInput ObsColor, FinishColor, ScanColor;
+        HudAPIv2.MenuColorPickerInput ObsColor, FinishColor, ScanColor, ExpandedColor;
         private void InitMenu()
         {
             SettingsMenu = new HudAPIv2.MenuRootCategory("Prospector", HudAPIv2.MenuRootCategory.MenuFlag.PlayerMenu, "Prospector Settings");
@@ -103,40 +102,53 @@ namespace Prospector
             ObsColor = new HudAPIv2.MenuColorPickerInput("Set out of range asteroid symbol/text color >", SettingsMenu, Settings.Instance.obsColor, "Select color", ChangeObsColor);
             ScanColor = new HudAPIv2.MenuColorPickerInput("Set in range but unscanned asteroid symbol/text color >", SettingsMenu, Settings.Instance.scanColor, "Select color", ChangeScanColor);
             FinishColor = new HudAPIv2.MenuColorPickerInput("Set scanned symbol/text color >", SettingsMenu, Settings.Instance.finishedColor, "Select color", ChangeFinishedColor);
+            ExpandedColor = new HudAPIv2.MenuColorPickerInput("Set data review mode color >", SettingsMenu, Settings.Instance.expandedColor, "Select color", ChangeExpandedColor);
             ShowConfigs = new HudAPIv2.MenuItem("Display configs (click here then hit enter to see info) >>", SettingsMenu, ShowCfgs);
+            HudRegisterObjects();
         }
 
         private void ShowCfgs()
         {
             showConfigQueued = true;
         }
-
+        private void ChangeExpandedColor(Color obj)
+        {
+            Settings.Instance.expandedColor = obj;
+            HudUpdateColor();
+            Save(Settings.Instance);
+        }
         private void ChangeObsColor(Color obj)
         {
             Settings.Instance.obsColor = obj;
+            Save(Settings.Instance);
         }
         private void ChangeFinishedColor(Color obj)
         {
             Settings.Instance.finishedColor = obj;
+            Save(Settings.Instance);
         }
         private void ChangeScanColor(Color obj)
         {
             Settings.Instance.scanColor = obj;
+            Save(Settings.Instance);
         }
         private void ShowSymbolsObs()
         {
             Settings.Instance.enableSymbols = !Settings.Instance.enableSymbols;
             SymbolEnableObs.Text = "Show bounding box: " + Settings.Instance.enableSymbols;
+            Save(Settings.Instance);
         }
         private void ShowAsteroids()
         {
             Settings.Instance.hideAsteroids = !Settings.Instance.hideAsteroids;
             AsteroidEnable.Text = "Hide asteroid display: " + Settings.Instance.hideAsteroids;
+            Save(Settings.Instance);
         }
         private void ShowLabelsObs()
         {
             Settings.Instance.enableLabels = !Settings.Instance.enableLabels;
             LabelEnableObs.Text = "Show labels: " + Settings.Instance.enableLabels;
+            Save(Settings.Instance);
         }
     }
 }

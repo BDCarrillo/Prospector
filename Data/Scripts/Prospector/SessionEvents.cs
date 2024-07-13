@@ -1,7 +1,6 @@
 ﻿using Digi.NetworkProtobufProspector;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using System;
 using System.Collections.Generic;
 using VRage.Game.Components;
 using VRage.Game.Entity;
@@ -57,6 +56,11 @@ namespace Prospector
 
                 roid.RemovedFromScene += Roid_RemovedFromScene;
                 newRoids.TryAdd(roid, 0);
+            }
+            if(!controlInit && entity is IMyOreDetector)
+            {
+                controlInit = true;
+                CreateTerminalControls<IMyOreDetector>();
             }
         }
 

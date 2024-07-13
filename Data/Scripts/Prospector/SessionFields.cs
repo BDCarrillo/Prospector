@@ -9,48 +9,58 @@ using VRage;
 using Sandbox.ModAPI;
 using Sandbox.Game;
 using System.Collections.Concurrent;
-using VRage.Voxels;
 
 namespace Prospector
 {
     public partial class Session : MySessionComponentBase
     {
         HudAPIv2 hudAPI;
-        internal bool client;
-        internal int tick = -300;
-        internal int gridMaxDisplayDist = 0;
-        internal long gridMaxDisplayDistSqr = 0;
+        public static Dictionary<MyStringHash, ScannerConfig> scannerTypes = new Dictionary<MyStringHash, ScannerConfig>();
+        public static Networking Networking = new Networking(5860);
+        public static ScannerConfigList serverList = new ScannerConfigList() { cfgList = new List<ScannerConfig>() };
+        public static bool rcvdSettings = false;
 
+        internal ConcurrentDictionary<MyVoxelBase, byte> newRoids = new ConcurrentDictionary<MyVoxelBase, byte>();
+        internal SerializableDictionary<MyVoxelBase, VoxelScan> voxelScans = new SerializableDictionary<MyVoxelBase, VoxelScan>();
+        internal MyTuple<MyCubeBlock, ScannerConfig> currentScanner = new MyTuple<MyCubeBlock, ScannerConfig>();
+        internal VoxelScanDict voxelScanMemory = new VoxelScanDict() { scans = new SerializableDictionary<long, VoxelScan>() };
+        internal MyCubeGrid controlledGrid;
+        internal double currentScannerFOVLimit = 0;
+        internal ulong serverID;
+        internal string scanDataSaveFile = "ScanData";
+        internal string scannerCfg = "ScannerConfigs.cfg";
+        internal float symbolHeight = 0f;//Leave this as zero, monitor aspect ratio is figured in later
+        internal float aspectRatio = 0f;//Leave this as zero, monitor aspect ratio is figured in later
+        internal float symbolWidth = 0.03f;
+        internal int maxCheckDist = 10000;
+        internal int tick = -300;
+        internal bool showConfigQueued = false;
+        internal bool controlInit = false;
+        internal bool queueReScan = false;
+        internal bool queueGPSTag = false;
+        internal bool planetSuppress = true;
+        internal bool registeredController = false;
+        internal bool server;
+        internal bool client;
+        internal bool mpActive;
+
+        //Client AV Vars
         internal MyStringId corner = MyStringId.GetOrCompute("SharpEdge"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId missileOutline = MyStringId.GetOrCompute("MissileOutline"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId frameCorner = MyStringId.GetOrCompute("FrameCorner"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId solidCircle = MyStringId.GetOrCompute("RoidCircle");
         internal MyStringId hollowCircle = MyStringId.GetOrCompute("RoidCircleHollow");
+        internal bool expandedMode = false;
+        internal bool hudObjectsRegistered = false;
+        internal HudAPIv2.BillBoardHUDMessage topLeft = null;
+        internal HudAPIv2.BillBoardHUDMessage topRight = null;
+        internal HudAPIv2.BillBoardHUDMessage botLeft = null;
+        internal HudAPIv2.BillBoardHUDMessage botRight = null;
+        internal HudAPIv2.BillBoardHUDMessage scanRing = null;
+        internal HudAPIv2.HUDMessage message = null;
+        internal HudAPIv2.HUDMessage title = null;
+        internal double ctrOffset = 0.25;
 
-        internal VRageRender.MyBillboard.BlendTypeEnum cornerBlend = VRageRender.MyBillboard.BlendTypeEnum.Standard;
-        internal SerializableDictionary<MyVoxelBase, VoxelScan> voxelScans = new SerializableDictionary<MyVoxelBase, VoxelScan>();
-        public static Dictionary<MyStringHash, ScannerConfig> scannerTypes = new Dictionary<MyStringHash, ScannerConfig>();
-        internal MyCubeGrid controlledGrid;
-        internal MyTuple<MyCubeBlock, ScannerConfig> currentScanner = new MyTuple<MyCubeBlock, ScannerConfig>();
-        internal double currentScannerFOVLimit = 0;
-        internal VoxelScanDict voxelScanMemory = new VoxelScanDict();
-        internal string scannerCfg = "ScannerConfigs.cfg";
-        public static Networking Networking = new Networking(5860);
-        public static ScannerConfigList serverList = new ScannerConfigList();
-        public static bool rcvdSettings = false;
-        internal bool registeredController = false;
-        internal int clientAttempts = 0;
-        internal bool server;
-        internal bool mpActive;
-        internal ulong serverID;
-        internal string scanDataSaveFile = "ScanData";
-        internal bool planetSuppress = true;
-        internal float symbolHeight = 0f;//Leave this as zero, monitor aspect ratio is figured in later
-        internal float aspectRatio = 0f;//Leave this as zero, monitor aspect ratio is figured in later
-        internal float symbolWidth = 0.03f;
-        internal int maxCheckDist = 10000;
-        internal bool showConfigQueued = false;
-        internal ConcurrentDictionary<MyVoxelBase, byte> newRoids = new ConcurrentDictionary<MyVoxelBase, byte>();
         private void Clean()
         {
             if (client)
@@ -58,7 +68,6 @@ namespace Prospector
                 SaveScans(true);
                 controlledGrid = null;
                 MyAPIGateway.Utilities.MessageEnteredSender -= OnMessageEnteredSender;
-                Save(Settings.Instance);
                 if (hudAPI != null)
                     hudAPI.Unload();
                 voxelScans.Dictionary.Clear();

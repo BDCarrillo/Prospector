@@ -6,211 +6,273 @@ using System;
 using Draygo.API;
 using System.Text;
 using VRage.Game.ModAPI;
-using VRage.Game;
-using VRage.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.ComTypes;
-using System.Diagnostics;
+using Sandbox.Game.Entities;
 
 namespace Prospector
 {
     public partial class Session : MySessionComponentBase
     {
-        private void ProcessDraws()
+        public override void Draw()
         {
-            try
-            {
-                var s = Settings.Instance;
-                if (s.hideAsteroids || currentScanner.Item1 == null || !currentScanner.Item1.IsWorking) return;
-                if (controlledGrid != null && !controlledGrid.MarkedForClose && !controlledGrid.IsStatic && !planetSuppress)
+            tick++;
+            if (client)
+                try
                 {
-                    if (Session == null || Session.Player == null)
+                    var s = Settings.Instance;
+                    if (s.hideAsteroids || currentScanner.Item1 == null || !currentScanner.Item1.IsWorking || Session.Camera == null || Session.Player == null || !hudAPI.Heartbeat || planetSuppress) return;
+                    if (controlledGrid != null && !controlledGrid.MarkedForClose && !controlledGrid.IsStatic)
                     {
-                        MyAPIGateway.Utilities.ShowNotification($"[Prospector] Draw Session or player is null");
-                        MyLog.Default.WriteLineAndConsole($"[Prospector] Draw Session or player is null");
-                        return;
-                    }
-                    var viewProjectionMat = Session.Camera.ViewMatrix * Session.Camera.ProjectionMatrix;
-                    var playerPos = controlledGrid.PositionComp.WorldAABB.Center;
-                    var camMat = Session.Camera.WorldMatrix;
-                    var PlayerCamera = MyAPIGateway.Session.IsCameraControlledObject;
-                    var cameraController = MyAPIGateway.Session.CameraController;
-                    var FirstPersonView = PlayerCamera && cameraController.IsInFirstPersonView;
-                    var entBlock = Session.Player.Controller.ControlledEntity.Entity as IMyCubeBlock;
-                    var crossHairPos = controlledGrid.GridIntegerToWorld(entBlock.Position + entBlock.PositionComp.LocalMatrixRef.Forward * 1000 / controlledGrid.GridSize);
+                        var viewProjectionMat = Session.Camera.ViewMatrix * Session.Camera.ProjectionMatrix;
+                        var camMat = Session.Camera.WorldMatrix;
+                        var FirstPersonView = Session.IsCameraControlledObject && Session.CameraController.IsInFirstPersonView;
+                        var entBlock = Session.Player.Controller.ControlledEntity.Entity as IMyCubeBlock;
+                        var scanCenter = controlledGrid.GridIntegerToWorld(entBlock.Position + entBlock.PositionComp.LocalMatrixRef.Up * entBlock.CubeGrid.LocalVolume.Radius * 0.5f / controlledGrid.GridSize);                        
+                        Vector3D scanCenterScreenCoords = FirstPersonView ? Vector3D.Zero : Vector3D.Transform(scanCenter, viewProjectionMat);
+                        scanRing.Offset = new Vector2D(scanCenterScreenCoords.X, scanCenterScreenCoords.Y);
+                        scanRing.Visible = !expandedMode; //TODO eval if this is the best place to have this, compared to cycle vis
+                        var viewRay = FirstPersonView ? new RayD(Session.Camera.Position, Session.Camera.WorldMatrix.Forward) :
+                            new RayD(Session.Camera.Position, Vector3D.Normalize(scanCenter - Session.Camera.Position));
 
-                    var viewRay = FirstPersonView ? new RayD(Session.Camera.Position, Session.Camera.WorldMatrix.Forward) :
-                        new RayD(Session.Camera.Position, Vector3D.Normalize(crossHairPos - Session.Camera.Position));
-
-
-                    if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.LeftShift))
-                    {
-                        //TODO onscreen label "Data Review - Scanner Paused" or similar
-                        var ctrOffset = 0.25;
-                        var sizeMult = 0.75f;
-                        var topRightDraw = new Vector2D(ctrOffset, ctrOffset);
-                        var topLeftDraw = new Vector2D(-ctrOffset, ctrOffset);
-                        var botRightDraw = new Vector2D(ctrOffset, -ctrOffset);
-                        var botLeftDraw = new Vector2D(-ctrOffset, -ctrOffset);
-                        var topLeftSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, topLeftDraw, s.expandedColor, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
-                        var topRightSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, topRightDraw, s.expandedColor, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 1.5708f, HideHud: true, Shadowing: true);
-                        var botRightSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, botRightDraw, s.expandedColor, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: 3.14159f, HideHud: true, Shadowing: true);
-                        var botLeftSymbolObj = new HudAPIv2.BillBoardHUDMessage(frameCorner, botLeftDraw, s.expandedColor, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, TimeToLive: 2, Rotation: -1.5708f, HideHud: true, Shadowing: true);
-                        var inbox = 0;
-                        var foundOre = 0;
-
-                        var rollupList = new Dictionary<string, int>();
-                        foreach (var keyValuePair in voxelScans.Dictionary)
+                        if(expandedMode)
                         {
-                            var voxel = keyValuePair.Key;
-                            var scanData = keyValuePair.Value;
-                            var position = voxel.PositionComp.WorldAABB.Center;
-                            var screenCoords = Vector3D.Transform(position, viewProjectionMat);
-                            var offscreen = screenCoords.X > 1 || screenCoords.X < -1 || screenCoords.Y > 1 || screenCoords.Y < -1 || screenCoords.Z > 1;
-                            if (offscreen) continue;
-
-                            if (screenCoords.X < ctrOffset && screenCoords.X > -ctrOffset && screenCoords.Y < ctrOffset && screenCoords.Y > -ctrOffset)
+                            var topRightDraw = new Vector2D(ctrOffset, ctrOffset);
+                            var foundOre = 0;
+                            double minDist = double.MaxValue;
+                            double maxDist = 0;
+                            var rollupList = new Dictionary<string, int>();
+                            int count = 0;
+                            Vector3D totalPos = Vector3D.Zero;
+                            KeyValuePair<MyVoxelBase, VoxelScan> lastFound = new KeyValuePair<MyVoxelBase, VoxelScan>();
+                            foreach (var keyValuePair in voxelScans.Dictionary)
                             {
-                                var ctrSymbolObj = new HudAPIv2.BillBoardHUDMessage(solidCircle, new Vector2D(screenCoords.X, screenCoords.Y), s.expandedColor, Width: symbolWidth*.75f, Height: symbolHeight*.75f, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
-                                inbox++;
-                                foundOre += scanData.foundore;
-                                foreach(var ore in scanData.ore.Dictionary)
+                                var voxel = keyValuePair.Key;
+                                var scanData = keyValuePair.Value;
+                                var position = voxel.PositionComp.WorldAABB.Center;
+                                var screenCoords = Vector3D.Transform(position, viewProjectionMat);
+                                var offscreen = screenCoords.X > 1 || screenCoords.X < -1 || screenCoords.Y > 1 || screenCoords.Y < -1 || screenCoords.Z > 1.000001;
+                                if (offscreen) continue;
+
+                                var drawColor = scanData.scanPercent == 1 ? s.finishedColor : scanData.scanPercent == 0 ? s.obsColor : s.scanColor;
+                                if (screenCoords.X < ctrOffset && screenCoords.X > -ctrOffset && screenCoords.Y < ctrOffset && screenCoords.Y > -ctrOffset)
                                 {
-                                    if (ore.Key == "Stone")
-                                        continue;
-                                    if (rollupList.ContainsKey(ore.Key))
-                                        rollupList[ore.Key] += ore.Value;
-                                    else
-                                        rollupList[ore.Key] = ore.Value;
-                                }
-                            }
-                            else
-                            {
-                                var ctrSymbolObj = new HudAPIv2.BillBoardHUDMessage(hollowCircle, new Vector2D(screenCoords.X, screenCoords.Y), s.expandedColor, Width: symbolWidth*1.5f, Height: symbolHeight*1.5f, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
-                            }
-                        }
-                        var textList = new List<string>();
-                        if(rollupList.Count > 0)
-                        {
-                            foreach(var ore in rollupList)
-                            {
-                                var amount = Math.Round((double)ore.Value / foundOre * 100, 2);
-                                var info = $"  {ore.Key} {(amount > 0.00d ? amount + " %" : "- Trace")}";
-                                textList.Add(info);
-                            }
-                        }
-
-                        textList.Sort();
-                        var finalText = new StringBuilder();
-                        foreach(var entry in textList)
-                            finalText.Append(entry + "\n");
-
-                        var label = new HudAPIv2.HUDMessage(finalText, topRightDraw, new Vector2D(.01, .025), 2, 1, true, true);
-                        label.InitialColor = s.expandedColor;
-                        label.Visible = true;
-                    }
-                    else
-
-                    foreach (var keyValuePair in voxelScans.Dictionary)
-                    {
-                        var voxel = keyValuePair.Key;
-                        var scanData = keyValuePair.Value;
-                        var position = voxel.PositionComp.WorldAABB.Center;
-                        var screenCoords = Vector3D.Transform(position, viewProjectionMat);
-                        var offscreen = screenCoords.X > 1 || screenCoords.X < -1 || screenCoords.Y > 1 || screenCoords.Y < -1 || screenCoords.Z > 1;
-                        if (offscreen) continue;
-
-                        var obsSize = voxel.PositionComp.LocalVolume.Radius;
-                        obsSize *= 0.5f; //Since 'roid LocalVolumes can be massive.  Unsure if there's a more accurate source of size or center point of actual voxel material                                
-                        var topRightScreen = Vector3D.Transform(position + camMat.Up * obsSize + camMat.Right * obsSize, viewProjectionMat);
-                        var inScanRange = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center) <= currentScanner.Item2.scanDistance * currentScanner.Item2.scanDistance;
-
-                        bool scanning = false;
-                        if (inScanRange && Vector3D.Dot(Session.Camera.WorldMatrix.Forward, Vector3D.Normalize(position - controlledGrid.PositionComp.WorldAABB.Center)) >= currentScannerFOVLimit)//viewRay.Intersects(voxel.PositionComp.WorldAABB) != null)
-                        {
-                            scanning = true;
-                            if (currentScanner.Item2.scanSpacing < scanData.scanSpacing) //Reset data to use a more precise scanner
-                            {
-                                //TODO rework reset function
-                                scanData.foundore = 0;
-                                scanData.nextScanPosX = 0;
-                                scanData.nextScanPosY = 0;
-                                scanData.nextScanPosZ = 0;
-                                scanData.ore.Dictionary.Clear();
-                                scanData.scanned = 0;
-                                scanData.scanPercent = 0;
-                                scanData.scanSpacing = currentScanner.Item2.scanSpacing;
-                                scanData.size = (voxel.StorageMax.X / currentScanner.Item2.scanSpacing + 1) * (voxel.StorageMax.Y / currentScanner.Item2.scanSpacing + 1) * (voxel.StorageMax.Z / currentScanner.Item2.scanSpacing + 1);
-                            }
-                            var offset = voxel.PositionComp.WorldVolume.Center - voxel.PositionLeftBottomCorner; //Pushes the storage checks to bottom left corner as all storage is positive, world matrix refs center
-                            if (scanData.scanPercent < 1)
-                            {
-                                for (int i = 0; i < currentScanner.Item2.scansPerTick; i++) //Iterate spaces and check for ore
-                                {
-                                    var nextScanPos = new Vector3D(scanData.nextScanPosX, scanData.nextScanPosY, scanData.nextScanPosZ);
-                                    if ((Vector3I)nextScanPos == voxel.StorageMax)
-                                    {
-                                        scanData.scanPercent = 1;
-                                        break;
-                                    }
-                                    
-                                    var worldCoord = Vector3D.Transform(nextScanPos, voxel.PositionComp.WorldMatrixRef) - offset;
-                                    var material = voxel.GetMaterialAt(ref worldCoord);
-                                    if (material != null && material.MinedOre != null)
-                                    {
-                                        if (!scanData.ore.Dictionary.ContainsKey(material.MinedOre))
-                                            scanData.ore.Dictionary.Add(material.MinedOre, 1);
-                                        else
-                                            scanData.ore[material.MinedOre]++;
-                                        scanData.foundore++;
-                                    }
-                                    scanData.scanned++;
-                                    scanData.scanPercent = (float)scanData.scanned / scanData.size;
-                                    if (scanData.nextScanPosX + scanData.scanSpacing <= voxel.StorageMax.X)
-                                        scanData.nextScanPosX += scanData.scanSpacing;
+                                    var ctrSymbolObj = new HudAPIv2.BillBoardHUDMessage(solidCircle, new Vector2D(screenCoords.X, screenCoords.Y), drawColor, Width: symbolWidth * .75f, Height: symbolHeight * .75f, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
+                                    if (queueReScan)
+                                        ResetData(ref scanData, ref voxel);
                                     else
                                     {
-                                        scanData.nextScanPosX = 0;
-                                        if (scanData.nextScanPosY + scanData.scanSpacing <= voxel.StorageMax.Y)
-                                            scanData.nextScanPosY += scanData.scanSpacing;
-                                        else
+                                        totalPos += position;
+                                        count++;
+                                        var dist = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center);
+                                        if (dist < minDist)
+                                            minDist = dist;
+                                        if (dist > maxDist)
+                                            maxDist = dist;
+
+                                        foundOre += scanData.foundore;
+                                        foreach (var ore in scanData.ore.Dictionary)
                                         {
-                                            scanData.nextScanPosY = 0;
-                                            if (scanData.nextScanPosZ + scanData.scanSpacing <= voxel.StorageMax.Z)
-                                                scanData.nextScanPosZ += scanData.scanSpacing;
+                                            if (ore.Key == "Stone")
+                                                continue;
+                                            if (rollupList.ContainsKey(ore.Key))
+                                                rollupList[ore.Key] += ore.Value;
+                                            else
+                                                rollupList[ore.Key] = ore.Value;
                                         }
+                                        lastFound = keyValuePair;
                                     }
                                 }
-                            }                            
-                        }
-                        if (s.enableSymbols && !offscreen && hudAPI.Heartbeat)
-                            if (scanData.scanPercent == 1)
-                                DrawFrame(topRightScreen, screenCoords, s.finishedColor.ToVector4());
-                            else if (scanning)
-                            {
-                                if((tick + 15) % 60 <= 20)
-                                    DrawFrame(topRightScreen, screenCoords, s.scanColor.ToVector4());
+                                else
+                                {
+                                    var ctrSymbolObj = new HudAPIv2.BillBoardHUDMessage(hollowCircle, new Vector2D(screenCoords.X, screenCoords.Y), drawColor, Width: symbolWidth * 1.25f, Height: symbolHeight * 1.25f, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
+                                    var ctrSymbolObj2 = new HudAPIv2.BillBoardHUDMessage(hollowCircle, new Vector2D(screenCoords.X, screenCoords.Y), drawColor, Width: symbolWidth, Height: symbolHeight, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
+                                }
                             }
-                            else if (inScanRange)
-                                DrawFrame(topRightScreen, screenCoords, s.scanColor.ToVector4());
+                            var textList = new List<string>();
+                            if(rollupList.Count > 0)
+                            {
+                                foreach(var ore in rollupList)
+                                {
+                                    var amount = Math.Round((double)ore.Value / foundOre * 100, 2);
+                                    var info = $"  {ore.Key} {(amount > 0.00d ? amount + " %" : "- Trace")}";
+                                    textList.Add(info);
+                                }
+                            }
+                            var finalText = new StringBuilder();
+                            if (textList.Count > 0)
+                            {
+                                textList.Sort();
+                                foreach (var entry in textList)
+                                    finalText.Append(entry + "\n");
+                                message.Message = finalText;
+                            }
                             else
-                                DrawFrame(topRightScreen, screenCoords, s.obsColor.ToVector4());
-                        if (s.enableLabels && hudAPI.Heartbeat && (MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.Alt) || viewRay.Intersects(voxel.PositionComp.WorldAABB) != null))
-                            if(scanData.scanPercent == 1)
-                                DrawOreLabel(position, obsSize, s.finishedColor, scanData, true, false);
-                            else if (inScanRange)
-                                DrawOreLabel(position, obsSize, s.scanColor, scanData, inScanRange, scanning);
-                            else
-                                DrawOreLabel(position, obsSize, s.obsColor, scanData, inScanRange, false);                       
+                                finalText.Append("  No Data\n");
+
+                            if (maxDist != 0)
+                            {
+                                var min = Math.Sqrt(minDist);
+                                var max = Math.Sqrt(maxDist);
+                                //TODO Consider reworking to distance to center of cluster with +/- from there
+                                finalText.AppendLine($"  {(min > 1000 ? (min / 1000).ToString("0.0") + " km" : (int)min + " m")} {(min != max ? (max > 1000 ? "- " + (max / 1000).ToString("0.0") + " km" : "- " + (int)max + " m")  : "")}");
+                            }
+                            message.Message = finalText;
+                            if (maxDist != 0 && queueGPSTag)
+                            {
+                                if (count == 1)
+                                    GPSTagSingle(lastFound.Key.PositionComp.WorldAABB.Center, lastFound.Value, lastFound.Key.EntityId);
+                                else
+                                {
+                                    var pos = totalPos / count;
+                                    var dispersion = Math.Sqrt(maxDist) - Math.Sqrt(minDist);
+                                    GPSTagMultiple(textList, count, dispersion, pos);
+                                }
+                            }
+                        }
+                        else
+                            foreach (var keyValuePair in voxelScans.Dictionary)
+                            {
+                                var voxel = keyValuePair.Key;
+                                var scanData = keyValuePair.Value;
+                                var position = voxel.PositionComp.WorldAABB.Center;
+                                var screenCoords = Vector3D.Transform(position, viewProjectionMat);
+                                var offscreen = screenCoords.X > 1 || screenCoords.X < -1 || screenCoords.Y > 1 || screenCoords.Y < -1 || screenCoords.Z > 1.000001;
+                                if (offscreen) continue;
+
+                                var obsSize = voxel.PositionComp.LocalVolume.Radius;
+                                obsSize *= 0.5f; //Since 'roid LocalVolumes can be massive.  Unsure if there's a more accurate source of size or center point of actual voxel material                                
+                                var topRightScreen = Vector3D.Transform(position + camMat.Up * obsSize + camMat.Right * obsSize, viewProjectionMat);
+                                var inScanRange = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center) <= currentScanner.Item2.scanDistance * currentScanner.Item2.scanDistance;
+
+                                bool scanning = false;
+                                if (inScanRange && Vector3D.Dot(Session.Camera.WorldMatrix.Forward, Vector3D.Normalize(position - Session.Camera.Position)) >= currentScannerFOVLimit)//viewRay.Intersects(voxel.PositionComp.WorldAABB) != null)
+                                {
+                                    scanning = true;
+                                    if (currentScanner.Item2.scanSpacing < scanData.scanSpacing) //Reset data to use a more precise scanner
+                                        ResetData(ref scanData, ref voxel);
+                                    var offset = voxel.PositionComp.WorldVolume.Center - voxel.PositionLeftBottomCorner; //Pushes the storage checks to bottom left corner as all storage is positive, world matrix refs center
+                                    if (scanData.scanPercent < 1)
+                                    {
+                                        for (int i = 0; i < currentScanner.Item2.scansPerTick; i++) //Iterate spaces and check for ore
+                                        {
+                                            var nextScanPos = new Vector3D(scanData.nextScanPosX, scanData.nextScanPosY, scanData.nextScanPosZ);
+                                            if ((Vector3I)nextScanPos == voxel.StorageMax)
+                                            {
+                                                scanData.scanPercent = 1;
+                                                break;
+                                            }
+                                    
+                                            var worldCoord = Vector3D.Transform(nextScanPos, voxel.PositionComp.WorldMatrixRef) - offset;
+                                            var material = voxel.GetMaterialAt(ref worldCoord);
+                                            if (material != null && material.MinedOre != null)
+                                            {
+                                                if (!scanData.ore.Dictionary.ContainsKey(material.MinedOre))
+                                                    scanData.ore.Dictionary.Add(material.MinedOre, 1);
+                                                else
+                                                    scanData.ore[material.MinedOre]++;
+                                                scanData.foundore++;
+                                            }
+                                            scanData.scanned++;
+                                            scanData.scanPercent = (float)scanData.scanned / scanData.size;
+                                            if (scanData.nextScanPosX + scanData.scanSpacing <= voxel.StorageMax.X)
+                                                scanData.nextScanPosX += scanData.scanSpacing;
+                                            else
+                                            {
+                                                scanData.nextScanPosX = 0;
+                                                if (scanData.nextScanPosY + scanData.scanSpacing <= voxel.StorageMax.Y)
+                                                    scanData.nextScanPosY += scanData.scanSpacing;
+                                                else
+                                                {
+                                                    scanData.nextScanPosY = 0;
+                                                    if (scanData.nextScanPosZ + scanData.scanSpacing <= voxel.StorageMax.Z)
+                                                        scanData.nextScanPosZ += scanData.scanSpacing;
+                                                }
+                                            }
+                                        }
+                                    }                            
+                                }
+                                if (s.enableSymbols)
+                                    if (scanData.scanPercent == 1)
+                                        DrawFrame(topRightScreen, screenCoords, s.finishedColor.ToVector4());
+                                    else if (scanning)
+                                    {
+                                        if((tick + 15) % 60 <= 20)
+                                            DrawFrame(topRightScreen, screenCoords, s.scanColor.ToVector4());
+                                    }
+                                    else if (inScanRange)
+                                        DrawFrame(topRightScreen, screenCoords, s.scanColor.ToVector4());
+                                    else
+                                        DrawFrame(topRightScreen, screenCoords, s.obsColor.ToVector4());
+                                if(queueReScan && viewRay.Intersects(voxel.PositionComp.WorldAABB) != null)
+                                    ResetData(ref scanData, ref voxel);
+
+                                if (s.enableLabels && (viewRay.Intersects(voxel.PositionComp.WorldAABB) != null))
+                                {
+                                    if (queueGPSTag)
+                                        GPSTagSingle(position, scanData, voxel.EntityId);
+                                    if (scanData.scanPercent == 1)
+                                        DrawOreLabel(position, obsSize, s.finishedColor, scanData, true, false);
+                                    else if (inScanRange)
+                                        DrawOreLabel(position, obsSize, s.scanColor, scanData, inScanRange, scanning);
+                                    else
+                                        DrawOreLabel(position, obsSize, s.obsColor, scanData, inScanRange, false);
+                                }
+                            }
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                MyAPIGateway.Utilities.ShowNotification($"[Prospector] Draw exception");
+                catch (Exception e)
+                {
+                    MyAPIGateway.Utilities.ShowNotification($"[Prospector] Draw exception {e}");
+                    MyLog.Default.WriteLineAndConsole($"[Prospector] Error while trying to draw {e}");
+                }
+            queueReScan = false;
+            queueGPSTag = false;
+        }
 
-                MyLog.Default.WriteLineAndConsole($"[Prospector] Error while trying to draw {e}");
+        private void ResetData(ref VoxelScan scanData, ref MyVoxelBase voxel)
+        {
+            scanData.foundore = 0;
+            scanData.nextScanPosX = 0;
+            scanData.nextScanPosY = 0;
+            scanData.nextScanPosZ = 0;
+            scanData.ore.Dictionary.Clear();
+            scanData.scanned = 0;
+            scanData.scanPercent = 0;
+            scanData.scanSpacing = currentScanner.Item2.scanSpacing;
+            scanData.size = (voxel.StorageMax.X / currentScanner.Item2.scanSpacing + 1) * (voxel.StorageMax.Y / currentScanner.Item2.scanSpacing + 1) * (voxel.StorageMax.Z / currentScanner.Item2.scanSpacing + 1);
+        }
+        private void GPSTagSingle(Vector3D position, VoxelScan scanData, long id)
+        {
+            var idStr = id.ToString();
+            var gpsName = "A-" + idStr.Substring(idStr.Length - 4, 4);
+            var gpsPos = position;
+            var info = "";
+            foreach (var ore in scanData.ore.Dictionary)
+            {
+                if (ore.Key != "Stone")
+                {
+                    var amount = Math.Round((double)ore.Value / scanData.foundore * 100, 2);
+                    var text = amount > 0.00d ? amount + " %" : "Trace";
+                    info += $"{text} {ore.Key}\n";
+                }
             }
+            var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, gpsPos, true);
+            MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);
+        }
+        private void GPSTagMultiple(List<string> ores, int count, double dispersion, Vector3D position)
+        {
+            //This goofy naming ID thing should give repeatable results for the same cluster.  Is that necessary? Probably not.
+            var x = ((int)position.X).ToString();
+            var y = ((int)position.Y).ToString();
+            var z = ((int)position.Z).ToString();
+            var a = count.ToString();
+            var gpsName = "C-" + x.Substring(x.Length - 1, 1) + y.Substring(y.Length - 1, 1) + z.Substring(z.Length -1, 1) + a.Substring(a.Length -1, 1);
+            var info = "Cluster of " + count + " asteroids\n";
+            foreach (var ore in ores)
+                info += ore + "\n";
+            info += (dispersion > 1000 ? (dispersion / 1000).ToString("0.0") + " km" : (int)dispersion + " m") + " dispersion";
+            var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, position, true);
+            MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);
         }
         private void DrawOreLabel(Vector3D position, float size, Color color, VoxelScan scanData, bool inRange, bool scanning)
         {

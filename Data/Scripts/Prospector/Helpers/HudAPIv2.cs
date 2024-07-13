@@ -791,7 +791,7 @@ namespace Draygo.API
 					this.Font = Font;
 				}
 			}
-			public HUDMessage()
+			public HUDMessage(string v)
 			{
 				instance.RegisterCheck();
 				BackingObject = instance.CreateMessage(MessageTypes.HUDMessage);

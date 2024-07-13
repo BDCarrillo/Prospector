@@ -11,12 +11,6 @@ using System.IO;
 using VRage;
 using Digi.NetworkProtobufProspector;
 using Sandbox.Game;
-using System.Reflection;
-using VRage.Game.Entity;
-using VRage.Voxels;
-using VRage.ModAPI;
-using VRage.Game;
-using System.Runtime.CompilerServices;
 
 namespace Prospector
 {
@@ -26,19 +20,17 @@ namespace Prospector
         public override void BeforeStart()
         {
             Networking.Register();
-            serverList.cfgList = new List<ScannerConfig>();
             serverID = MyAPIGateway.Multiplayer.ServerId;
             if (serverID > 0)
-                scanDataSaveFile += serverID;
+                scanDataSaveFile += serverID; //TODO verify this holds up in torch clusters
             scanDataSaveFile += ".scn";
             if (client)
             {
                 MyAPIGateway.Utilities.MessageEnteredSender += OnMessageEnteredSender;
                 InitConfig();
-                voxelScanMemory.scans = new SerializableDictionary<long, VoxelScan>();
                 LoadScans();
                 hudAPI = new HudAPIv2(InitMenu);
-                maxCheckDist = (int)(Math.Max(Session.SessionSettings.SyncDistance, Session.SessionSettings.ViewDistance) * 0.95f);
+                maxCheckDist = (int)(Math.Max(Session.SessionSettings.SyncDistance, Session.SessionSettings.ViewDistance) * 1.1f);
             }
             if (server)
             {
@@ -46,7 +38,7 @@ namespace Prospector
                 MyVisualScriptLogicProvider.PlayerConnected += PlayerConnected;
             }
             if (client && server)
-                rcvdSettings = true;
+                rcvdSettings = true; //SP workaround
         }
 
         public override void LoadData()
@@ -55,7 +47,11 @@ namespace Prospector
             server = (mpActive && MyAPIGateway.Multiplayer.IsServer) || !mpActive;
             client = (mpActive && !MyAPIGateway.Multiplayer.IsServer) || !mpActive;
             if (client)
+            {
                 MyEntities.OnEntityCreate += OnEntityCreate;
+                MyAPIGateway.TerminalControls.CustomControlGetter += CustomControlGetter;
+                MyAPIGateway.TerminalControls.CustomActionGetter += CustomActionGetter;
+            }
         }
         private void UpdateLists()
         {
@@ -81,33 +77,22 @@ namespace Prospector
                     {
                         if (scannerTypes.ContainsKey(block.BlockDefinition.Id.SubtypeId) && block.IsWorking)
                         {
-                            var dispDist = scannerTypes[block.BlockDefinition.Id.SubtypeId].displayDistance;
                             if (scannerTypes[block.BlockDefinition.Id.SubtypeId].scanDistance > 0)
                             {
                                 currentScanner = new MyTuple<MyCubeBlock, ScannerConfig>(block, scannerTypes[block.BlockDefinition.Id.SubtypeId]);
                                 currentScannerFOVLimit = Math.Cos(MathHelper.ToRadians(currentScanner.Item2.scanFOV));
                             }
-                                
-                            if(gridMaxDisplayDist < dispDist)
-                                gridMaxDisplayDist = dispDist;
                         }
                     }
-                    gridMaxDisplayDistSqr = gridMaxDisplayDist * gridMaxDisplayDist;
-
-                    var gridPos = controlledGrid.PositionComp.WorldAABB.Center;
                     if (!Settings.Instance.hideAsteroids && currentScanner.Item1 != null && currentScanner.Item1.IsWorking)
                     {
                         foreach(var objRoid in newRoids.Keys) 
                         {
                             if(voxelScans.Dictionary.ContainsKey(objRoid))
-                            {
                                 continue;
-                            }
                             else if (voxelScanMemory.scans.Dictionary.ContainsKey(objRoid.EntityId))
-                            {
                                 voxelScans.Dictionary.Add(objRoid, voxelScanMemory.scans.Dictionary[objRoid.EntityId]);
-                            }
-                            else if (Vector3D.DistanceSquared(gridPos, objRoid.PositionComp.WorldAABB.Center) < gridMaxDisplayDistSqr)
+                            else
                             {
                                 var scan = new VoxelScan();
                                 scan.size = (objRoid.StorageMax.X / currentScanner.Item2.scanSpacing + 1) * (objRoid.StorageMax.Y / currentScanner.Item2.scanSpacing + 1) * (objRoid.StorageMax.Z / currentScanner.Item2.scanSpacing + 1);
@@ -129,50 +114,6 @@ namespace Prospector
             }
         }
 
-        private void ValidateList()
-        {
-            //SaveScans(false);
-            //var gridPos = controlledGrid.PositionComp.WorldAABB.Center;
-            //var dispDistSqr = gridMaxDisplayDist * gridMaxDisplayDist;
-            //foreach (var objRoid in newRoids)
-            //{
-                //return;
-                /*
-                try
-                {
-                    var planet = objRoid as MyPlanet;
-                    var boulder = objRoid.BoulderInfo != null;
-                    if (planet == null && !boulder)//Should only suppress boulders
-                    {
-                        if (voxelScanMemory.scans.Dictionary.ContainsKey(objRoid.EntityId))
-                        {
-                            voxelScans.Dictionary.Add(objRoid, voxelScanMemory.scans.Dictionary[objRoid.EntityId]);
-                        }
-                        else if (Vector3D.DistanceSquared(gridPos, objRoid.PositionComp.WorldAABB.Center) < dispDistSqr)
-                        {
-                            var scan = new VoxelScan();
-                            scan.size = (objRoid.StorageMax.X / currentScanner.Item2.scanSpacing + 1) * (objRoid.StorageMax.Y / currentScanner.Item2.scanSpacing + 1) * (objRoid.StorageMax.Z / currentScanner.Item2.scanSpacing + 1);
-                            scan.nextScanPosX = objRoid.StorageMin.X;
-                            scan.nextScanPosY = objRoid.StorageMin.Y;
-                            scan.nextScanPosZ = objRoid.StorageMin.Z;
-                            scan.scanSpacing = currentScanner.Item2.scanSpacing;
-                            scan.ore = new SerializableDictionary<string, int>();
-                            voxelScans.Dictionary.Add(objRoid, scan);
-                        }
-                    }
-                    else if(boulder)
-                    {
-                        //TODO boulder stuff?
-                    }
-                }
-                catch (Exception e)
-                {
-                    MyLog.Default.WriteLineAndConsole($"[Prospector] Well something went wrong in Validate List {e}");
-                }
-                */
-            //}
-        }
-
         public override void UpdateBeforeSimulation()
         {
             if (client)
@@ -188,14 +129,11 @@ namespace Prospector
                     try
                     {
                         Session.Player.Controller.ControlledEntityChanged += GridChange;
-                        registeredController = true;
                         GridChange(null, Session.Player.Controller.ControlledEntity);
                         MyLog.Default.WriteLineAndConsole($"Prospector: Registered controller");
+                        registeredController = true;
                     }
-                    catch
-                    {
-                        registeredController = false;
-                    }
+                    catch { }
                 }
 
                 if (showConfigQueued)
@@ -212,7 +150,6 @@ namespace Prospector
                         {
                             var s = scanner.Value;
                             d += "Block SubType: " + s.subTypeID + "\n" +
-                                "  Display Distance:" + s.displayDistance + "m\n" +
                                 "  Scan Distance:" + s.scanDistance + "m\n" +
                                 "  Scan FOV:" + s.scanFOV + "\n" +
                                 "  Scan Spacing:" + s.scanSpacing + "m\n" +
@@ -228,18 +165,15 @@ namespace Prospector
                 }
             }
         }
-        public override void Draw()
-        {
-            if (client)
-            {
-                ProcessDraws();
-                tick++;
-            }
-        }
 
         protected override void UnloadData()
         {
             Clean();
+            if(client)
+            {
+                MyAPIGateway.TerminalControls.CustomControlGetter -= CustomControlGetter;
+                MyAPIGateway.TerminalControls.CustomActionGetter -= CustomActionGetter;
+            }
         }
         public override void SaveData()
         {

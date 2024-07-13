@@ -1,6 +1,5 @@
 ﻿using Sandbox.ModAPI;
 using System.Collections.Generic;
-using ProtoBuf;
 using System.IO;
 using VRage.Utils;
 using System;
@@ -49,7 +48,6 @@ namespace Prospector
                 scansPerTick = 400,
                 scanDistance = 10000,
                 scanSpacing = 8,
-                displayDistance = 10000,
                 subTypeID = "LargeOreDetector",
                 scanFOV = 15};
             defaultList.Add(largeScanner);
@@ -58,19 +56,9 @@ namespace Prospector
                 scansPerTick = 200,
                 scanDistance = 5000,
                 scanSpacing = 12,
-                displayDistance = 5000,
                 subTypeID = "SmallBlockOreDetector",
                 scanFOV = 5};
             defaultList.Add(smallScanner);
-
-            var largeDish = new ScannerConfig() {
-                scansPerTick = 0, 
-                scanDistance = 0, 
-                scanSpacing = 100, 
-                displayDistance = 25000, 
-                subTypeID = "LargeBlockRadioAntennaDish", 
-                scanFOV = 45};
-            defaultList.Add(largeDish);
 
             TextWriter writer;
             writer = MyAPIGateway.Utilities.WriteFileInWorldStorage(scannerCfg, typeof(ScannerConfig));
