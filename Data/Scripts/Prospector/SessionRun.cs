@@ -4,13 +4,14 @@ using VRageMath;
 using Sandbox.Game.Entities;
 using VRage.Utils;
 using System;
-using System.Collections.Generic;
 using Draygo.API;
 using VRage.Serialization;
 using System.IO;
 using VRage;
 using Digi.NetworkProtobufProspector;
 using Sandbox.Game;
+using Sandbox.Definitions;
+
 
 namespace Prospector
 {
@@ -31,6 +32,7 @@ namespace Prospector
                 LoadScans();
                 hudAPI = new HudAPIv2(InitMenu);
                 maxCheckDist = (int)(Math.Max(Session.SessionSettings.SyncDistance, Session.SessionSettings.ViewDistance) * 1.1f);
+                LoadOreTags();
             }
             if (server)
             {
@@ -229,6 +231,35 @@ namespace Prospector
                 MyAPIGateway.Utilities.ShowMessage("Prospector", $"Error loading saved info");
             }
         }      
+
+        private void LoadOreTags()
+        {
+            MyLog.Default.WriteLine("[PROSPECTOR] LoadOreTags started");
+            foreach (var matDef in MyDefinitionManager.Static.GetVoxelMaterialDefinitions())
+            {
+                if (matDef == null || !matDef.CanBeHarvested || !matDef.SpawnsInAsteroids || matDef.MinedOre == null)
+                    continue;
+                if (!oreTagMap.ContainsKey(matDef.MinedOre))
+                {
+                    var formattedName = "";
+                    //Better Stone formatting
+                    if (matDef.MinedOre.Contains("(") && matDef.MinedOre.Contains(")"))
+                    {
+                        var trimmed = matDef.MinedOre.Remove(0, matDef.MinedOre.IndexOf('(') + 1);
+                        var final = trimmed.TrimEnd(new char[] { ')', ' ' });
+                        formattedName = final;
+                    }
+                    else if (oreDefaults.ContainsKey(matDef.MinedOre))
+                        formattedName = oreDefaults[matDef.MinedOre]; 
+                    else
+                    {
+                        MyLog.Default.WriteLine($"[Prospector] Asteroid spawnable ore type found without a linked shorthand for GPS: {matDef.MinedOre}");
+                        formattedName = matDef.MinedOre;
+                    }
+                    oreTagMap.Add(matDef.MinedOre, formattedName); //TODO hook in serialization of a custom file to add to this, propagated by server
+                }
+            }
+        }
     }
 }
 

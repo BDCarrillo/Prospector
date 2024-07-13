@@ -20,6 +20,7 @@ namespace Prospector
         public static ScannerConfigList serverList = new ScannerConfigList() { cfgList = new List<ScannerConfig>() };
         public static bool rcvdSettings = false;
 
+        internal Dictionary<string, string> oreTagMap = new Dictionary<string, string>();
         internal ConcurrentDictionary<MyVoxelBase, byte> newRoids = new ConcurrentDictionary<MyVoxelBase, byte>();
         internal SerializableDictionary<MyVoxelBase, VoxelScan> voxelScans = new SerializableDictionary<MyVoxelBase, VoxelScan>();
         internal MyTuple<MyCubeBlock, ScannerConfig> currentScanner = new MyTuple<MyCubeBlock, ScannerConfig>();
@@ -61,30 +62,58 @@ namespace Prospector
         internal HudAPIv2.HUDMessage title = null;
         internal double ctrOffset = 0.25;
 
+        //Hardcoded material names
+        internal Dictionary<string, string> oreDefaults = new Dictionary<string, string>()
+        {
+            {"Ice", "Ice"},
+            {"Nickel", "Ni"},
+            {"Stone", "Stone"},
+            {"Cobalt", "Co"},
+            {"Magnesium", "Mg"},
+            {"Silicon", "Si"},
+            {"Silver", "Ag"},
+            {"Gold", "Au"},
+            {"Platinum", "Pt"},
+            {"Uranium", "U"},
+            
+            //IO
+            {"Sulfur", "S"},
+            {"Coal", "C"},
+            {"Copper", "Cu"},
+            {"Lithium", "Li"},
+            {"Bauxite", "Al"},
+            {"Titanium", "Ti"},
+            {"Tantalum", "Ta"},
+        };
+
         private void Clean()
         {
             if (client)
             {
                 SaveScans(true);
-                controlledGrid = null;
                 MyAPIGateway.Utilities.MessageEnteredSender -= OnMessageEnteredSender;
                 if (hudAPI != null)
                     hudAPI.Unload();
-                voxelScans.Dictionary.Clear();
-                voxelScanMemory.scans.Dictionary.Clear();
-                scannerTypes.Clear();
+
                 if (registeredController)
                     MyAPIGateway.Session.Player.Controller.ControlledEntityChanged -= GridChange;
                 MyEntities.OnEntityCreate -= OnEntityCreate;
-                newRoids.Clear();
             }
             if (server)
             {
-                serverList.Clear();
                 MyVisualScriptLogicProvider.PlayerConnected -= PlayerConnected;
             }
             Networking?.Unregister();
             Networking = null;
+
+            //Data purge
+            scannerTypes.Clear();
+            serverList.Clear();
+            oreTagMap.Clear();
+            newRoids.Clear();
+            voxelScans.Dictionary.Clear();
+            voxelScanMemory.scans.Dictionary.Clear();
+            controlledGrid = null;
         }
     }
 }

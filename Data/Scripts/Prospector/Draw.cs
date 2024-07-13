@@ -125,7 +125,7 @@ namespace Prospector
                                 {
                                     var pos = totalPos / count;
                                     var dispersion = Math.Sqrt(maxDist) - Math.Sqrt(minDist);
-                                    GPSTagMultiple(textList, count, dispersion, pos);
+                                    GPSTagMultiple(textList, count, dispersion, pos, rollupList);
                                 }
                             }
                         }
@@ -254,12 +254,13 @@ namespace Prospector
                     var amount = Math.Round((double)ore.Value / scanData.foundore * 100, 2);
                     var text = amount > 0.00d ? amount + " %" : "Trace";
                     info += $"{text} {ore.Key}\n";
+                    gpsName += " " + oreTagMap[ore.Key];
                 }
             }
             var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, gpsPos, true);
             MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);
         }
-        private void GPSTagMultiple(List<string> ores, int count, double dispersion, Vector3D position)
+        private void GPSTagMultiple(List<string> ores, int count, double dispersion, Vector3D position, Dictionary<string, int> rollup)
         {
             //This goofy naming ID thing should give repeatable results for the same cluster.  Is that necessary? Probably not.
             var x = ((int)position.X).ToString();
@@ -270,13 +271,16 @@ namespace Prospector
             var info = "Cluster of " + count + " asteroids\n";
             foreach (var ore in ores)
                 info += ore + "\n";
+            foreach(var ore in rollup.Keys)
+            {
+                gpsName += " " + oreTagMap[ore];
+            }
             info += (dispersion > 1000 ? (dispersion / 1000).ToString("0.0") + " km" : (int)dispersion + " m") + " dispersion";
             var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, position, true);
             MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);
         }
         private void DrawOreLabel(Vector3D position, float size, Color color, VoxelScan scanData, bool inRange, bool scanning)
-        {
-            
+        {           
             var topRightPos = position + Session.Camera.WorldMatrix.Up * size + Session.Camera.WorldMatrix.Right * size;
             var screenCoords = Session.Camera.WorldToScreen(ref topRightPos);
             var info = new StringBuilder();
