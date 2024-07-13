@@ -35,11 +35,10 @@ namespace Prospector
             catch (Exception e)
             {
                 MyLog.Default.WriteLineAndConsole($"[Prospector] Error with loading config, writing default to world folder {e}");
-                WriteDefaults(true);
+                WriteDefaults();
             }
         }
-
-        private void WriteDefaults(bool error = false)
+        private void WriteDefaults()
         {
             scannerTypes.Clear();
             serverList.cfgList.Clear();
@@ -70,6 +69,49 @@ namespace Prospector
                 serverList.cfgList.Add(temp);
                 scannerTypes.Add(MyStringHash.GetOrCompute(temp.subTypeID), temp);
             }
+        }
+        private void LoadCustomOreTags()
+        {
+            try
+            {
+                if (MyAPIGateway.Utilities.FileExistsInWorldStorage(customOreTags, typeof(OreTags)))//Write config if missing
+                {
+                    TextReader reader = MyAPIGateway.Utilities.ReadFileInWorldStorage(customOreTags, typeof(OreTags));
+                    var data = MyAPIGateway.Utilities.SerializeFromXML<List<OreTags>>(reader.ReadToEnd());
+                    reader.Close();
+                    foreach (var tag in data)
+                        oreTagMapCustom[tag.minedName] = tag.tag;
+                    if(client && server)
+                        foreach (var tag in data)
+                            oreTagMap[tag.minedName] = tag.tag;
+                    MyLog.Default.WriteLineAndConsole($"[Prospector] Loaded {data.Count} custom ore tags");
+                }
+                else
+                {
+                    WriteOreDefaults();
+                }
+            }
+            catch (Exception e)
+            {
+                MyLog.Default.WriteLineAndConsole($"[Prospector] Error with loading custom ore tags, writing default to world folder {e}");
+                WriteOreDefaults();
+            }
+        }
+        private void WriteOreDefaults()
+        {
+            oreTagMapCustom.Clear();
+
+            var tempCfg = new List<OreTags>()
+            {
+                new OreTags() { minedName = "Element Zero", tag = "eezo" },
+                new OreTags() { minedName = "Unobtanium", tag = "Uo" },
+                new OreTags() { minedName = "Lynxite", tag = "Lx" },
+            };
+
+            TextWriter writer;
+            writer = MyAPIGateway.Utilities.WriteFileInWorldStorage(customOreTags, typeof(OreTags));
+            writer.Write(MyAPIGateway.Utilities.SerializeToXML(tempCfg));
+            writer.Close();
         }
     }
 }

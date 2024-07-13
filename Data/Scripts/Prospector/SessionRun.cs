@@ -37,6 +37,7 @@ namespace Prospector
             if (server)
             {
                 LoadConfigs();
+                LoadCustomOreTags();
                 MyVisualScriptLogicProvider.PlayerConnected += PlayerConnected;
             }
             if (client && server)

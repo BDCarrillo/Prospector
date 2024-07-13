@@ -148,7 +148,6 @@
     <Compile Include="Data\Scripts\Prospector\Helpers\Controls.cs" />
     <Compile Include="Data\Scripts\Prospector\SessionFields.cs" />
     <Compile Include="Data\Scripts\Prospector\SessionHud.cs" />
-    <Compile Include="Data\Scripts\Prospector\SessionServer.cs" />
     <Compile Include="Data\Scripts\Prospector\Networking.cs" />
     <Compile Include="Data\Scripts\Prospector\Helpers\HudAPIv2.cs" />
     <Compile Include="Data\Scripts\Prospector\Configs.cs" />

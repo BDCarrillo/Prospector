@@ -9,6 +9,8 @@ namespace Prospector
     {
         [ProtoMember(1)]
         public SerializableDictionary<long, VoxelScan> scans { get; set; }
+        [ProtoMember(2)]
+        public SerializableDictionary<string, string> oreTags { get; set; }
     }
 
     [ProtoContract]
@@ -58,5 +60,13 @@ namespace Prospector
         public string subTypeID { get; set; }
         [ProtoMember(5)]
         public int scanFOV { get; set; }
+    }
+    [ProtoContract]
+    public class OreTags
+    {
+        [ProtoMember(1)]
+        public string minedName { get; set; }
+        [ProtoMember(2)]
+        public string tag { get; set; }
     }
 }

@@ -119,7 +119,7 @@ namespace Prospector
                 if (player.IdentityId == id && !player.IsBot)
                 {
                     var steamId = MyAPIGateway.Players.TryGetSteamId(id);
-                    Networking.SendToPlayer(new PacketSettings(serverList), steamId);
+                    Networking.SendToPlayer(new PacketSettings(serverList, oreTagMapCustom), steamId);
                     MyLog.Default.WriteLineAndConsole($"Prospector: Sent settings to player " + steamId + serverList.cfgList.Count);
                     return;
                 }

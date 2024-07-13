@@ -149,8 +149,6 @@ namespace Digi.NetworkProtobufProspector
 
     // tag numbers in ProtoInclude collide with numbers from ProtoMember in the same class, therefore they must be unique.
     [ProtoInclude(1000, typeof(PacketSettings))]
-    [ProtoInclude(2000, typeof(RequestSettings))]
-
 
     [ProtoContract]
     public abstract class PacketBase
@@ -177,13 +175,16 @@ namespace Digi.NetworkProtobufProspector
         // tag numbers in this class won't collide with tag numbers from the base class
         [ProtoMember(2)]
         public ScannerConfigList ScannerConfig;
+        [ProtoMember(3)]
+        public Dictionary<string, string> OreTags;
 
 
         public PacketSettings() { } // Empty constructor required for deserialization
 
-        public PacketSettings(ScannerConfigList scannerConfig)
+        public PacketSettings(ScannerConfigList scannerConfig, Dictionary<string, string> oreTags)
         {
             ScannerConfig = scannerConfig;
+            OreTags = oreTags;
         }
 
         public override bool Received()
@@ -202,42 +203,21 @@ namespace Digi.NetworkProtobufProspector
                             Session.scannerTypes.Add(MyStringHash.GetOrCompute(scanner.subTypeID), scanner);
                         }
                         Session.rcvdSettings = true;
-                        MyAPIGateway.Utilities.ShowMessage("Prospector", $"Received {ScannerConfig.cfgList.Count} block settings from server");
+                        MyLog.Default.WriteLineAndConsole($"Prospector Received {ScannerConfig.cfgList.Count} block settings from server");
                     }
-
+                    if (OreTags.Count > 0)
+                    {
+                        foreach (var type in OreTags)
+                        {
+                            Session.oreTagMap[type.Key] = type.Value;
+                        }
+                        MyLog.Default.WriteLineAndConsole($"Prospector Received {OreTags.Count} custom ore tags from server");
+                    }
                 }
                 catch (Exception e)
                 {
                     MyLog.Default.WriteLineAndConsole($"Prospector: Failed to process packet {e}");
                 }
-            }
-            else//Client requested settings (I think?)
-            {
-                MyLog.Default.WriteLineAndConsole($"Prospector: Client requested settings");
-            }
-
-            return false; // relay packet to other clients (only works if server receives it)
-        }
-    }
-    [ProtoContract]
-    public partial class RequestSettings : PacketBase
-    {
-        // tag numbers in this class won't collide with tag numbers from the base class
-        [ProtoMember(4)]
-        public ulong playerID;
-
-        public RequestSettings() { } // Empty constructor required for deserialization
-
-        public RequestSettings(ulong playerid)
-        {
-            playerID = playerid;
-        }
-
-        public override bool Received()
-        {
-            if (MyAPIGateway.Utilities.IsDedicated)
-            {
-                Session.ServerSendRequested(playerID);
             }
             return false; // relay packet to other clients (only works if server receives it)
         }

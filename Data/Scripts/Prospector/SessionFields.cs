@@ -19,8 +19,9 @@ namespace Prospector
         public static Networking Networking = new Networking(5860);
         public static ScannerConfigList serverList = new ScannerConfigList() { cfgList = new List<ScannerConfig>() };
         public static bool rcvdSettings = false;
+        public static Dictionary<string, string> oreTagMap = new Dictionary<string, string>();
 
-        internal Dictionary<string, string> oreTagMap = new Dictionary<string, string>();
+        internal Dictionary<string, string> oreTagMapCustom = new Dictionary<string, string>();
         internal ConcurrentDictionary<MyVoxelBase, byte> newRoids = new ConcurrentDictionary<MyVoxelBase, byte>();
         internal SerializableDictionary<MyVoxelBase, VoxelScan> voxelScans = new SerializableDictionary<MyVoxelBase, VoxelScan>();
         internal MyTuple<MyCubeBlock, ScannerConfig> currentScanner = new MyTuple<MyCubeBlock, ScannerConfig>();
@@ -30,6 +31,7 @@ namespace Prospector
         internal ulong serverID;
         internal string scanDataSaveFile = "ScanData";
         internal string scannerCfg = "ScannerConfigs.cfg";
+        internal string customOreTags = "CustomOreTags.cfg";
         internal float symbolHeight = 0f;//Leave this as zero, monitor aspect ratio is figured in later
         internal float aspectRatio = 0f;//Leave this as zero, monitor aspect ratio is figured in later
         internal float symbolWidth = 0.03f;
