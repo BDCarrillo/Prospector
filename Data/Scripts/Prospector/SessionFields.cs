@@ -15,7 +15,7 @@ namespace Prospector
     public partial class Session : MySessionComponentBase
     {
         HudAPIv2 hudAPI;
-        public static Dictionary<MyStringHash, ScannerConfig> scannerTypes = new Dictionary<MyStringHash, ScannerConfig>();
+        public static Dictionary<string, ScannerConfig> scannerTypes = new Dictionary<string, ScannerConfig>();
         public static Networking Networking = new Networking(5860);
         public static ScannerConfigList serverList = new ScannerConfigList() { cfgList = new List<ScannerConfig>() };
         public static bool rcvdSettings = false;
@@ -24,7 +24,6 @@ namespace Prospector
         internal Dictionary<string, string> oreTagMapCustom = new Dictionary<string, string>();
         internal ConcurrentDictionary<MyVoxelBase, byte> newRoids = new ConcurrentDictionary<MyVoxelBase, byte>();
         internal SerializableDictionary<MyVoxelBase, VoxelScan> voxelScans = new SerializableDictionary<MyVoxelBase, VoxelScan>();
-        internal MyTuple<MyCubeBlock, ScannerConfig> currentScanner = new MyTuple<MyCubeBlock, ScannerConfig>();
         internal VoxelScanDict voxelScanMemory = new VoxelScanDict() { scans = new SerializableDictionary<long, VoxelScan>() };
         internal MyCubeGrid controlledGrid;
         internal double currentScannerFOVLimit = 0;
@@ -37,15 +36,20 @@ namespace Prospector
         internal float symbolWidth = 0.03f;
         internal int maxCheckDist = 10000;
         internal int tick = -300;
-        internal bool showConfigQueued = false;
-        internal bool controlInit = false;
-        internal bool queueReScan = false;
-        internal bool queueGPSTag = false;
+        internal bool showConfigQueued;
+        internal bool controlInit;
+        internal bool queueReScan;
+        internal bool queueGPSTag;
         internal bool planetSuppress = true;
-        internal bool registeredController = false;
+        internal bool registeredController;
         internal bool server;
         internal bool client;
         internal bool mpActive;
+
+        //Current scanner tracking
+        internal IMyOreDetector currentScanner = null;
+        internal ScannerConfig currentScannerConfig = null;
+        internal bool currentScannerActive;
 
         //Client AV Vars
         internal MyStringId corner = MyStringId.GetOrCompute("SharpEdge"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
@@ -53,8 +57,8 @@ namespace Prospector
         internal MyStringId frameCorner = MyStringId.GetOrCompute("FrameCorner"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId solidCircle = MyStringId.GetOrCompute("RoidCircle");
         internal MyStringId hollowCircle = MyStringId.GetOrCompute("RoidCircleHollow");
-        internal bool expandedMode = false;
-        internal bool hudObjectsRegistered = false;
+        internal bool expandedMode;
+        internal bool hudObjectsRegistered;
         internal HudAPIv2.BillBoardHUDMessage topLeft = null;
         internal HudAPIv2.BillBoardHUDMessage topRight = null;
         internal HudAPIv2.BillBoardHUDMessage botLeft = null;
@@ -93,7 +97,6 @@ namespace Prospector
             if (client)
             {
                 SaveScans(true);
-                MyAPIGateway.Utilities.MessageEnteredSender -= OnMessageEnteredSender;
                 if (hudAPI != null)
                     hudAPI.Unload();
 
@@ -110,10 +113,11 @@ namespace Prospector
 
             //Data purge
             scannerTypes.Clear();
-            serverList.Clear();
+            serverList.cfgList.Clear();
             oreTagMap.Clear();
             newRoids.Clear();
             voxelScans.Dictionary.Clear();
+            currentScanner = null;
             voxelScanMemory.scans.Dictionary.Clear();
             controlledGrid = null;
         }

@@ -41,10 +41,6 @@ namespace Prospector
     {
         [ProtoMember(1)]
         public List<ScannerConfig> cfgList { get; set; }
-        public void Clear()
-        {
-            cfgList.Clear();
-        }
     }
 
     [ProtoContract]
@@ -61,6 +57,7 @@ namespace Prospector
         [ProtoMember(5)]
         public int scanFOV { get; set; }
     }
+
     [ProtoContract]
     public class OreTags
     {

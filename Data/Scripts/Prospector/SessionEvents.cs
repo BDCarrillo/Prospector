@@ -11,41 +11,6 @@ namespace Prospector
 {
     public partial class Session : MySessionComponentBase
     {
-        private void OnMessageEnteredSender(ulong sender, string messageText, ref bool sendToOthers)
-        {
-            messageText.ToLower();
-            if (messageText == "/prospector")
-            {
-                MyAPIGateway.Utilities.ShowMessage("Prospector", "Options can be found in the Mod Settings Menu.  Press F2 with a chat line open and it should appear in the top left of your screen.  '/prospector reset' to restore defaults or '/prospector hide' to show/hide HUD elements");
-                sendToOthers = false;
-            }
-            if (messageText == "/prospector hide")
-            {
-                Settings.Instance.hideAsteroids = !Settings.Instance.hideAsteroids;
-                if (Settings.Instance.hideAsteroids)
-                    MyAPIGateway.Utilities.ShowNotification("Prospector hidden, re-enable with '/prospector hide' or '/prospector show' again");
-                else
-                    MyAPIGateway.Utilities.ShowNotification("Prospector visible");
-                sendToOthers = false;
-            }
-            if (messageText == "/prospector show")
-            {
-                Settings.Instance.hideAsteroids = !Settings.Instance.hideAsteroids;
-                if (Settings.Instance.hideAsteroids)
-                    MyAPIGateway.Utilities.ShowNotification("Prospector hidden, re-enable with '/prospector hide' or '/prospector show' again");
-                else
-                    MyAPIGateway.Utilities.ShowNotification("Prospector visible");
-                sendToOthers = false;
-            }
-            if (messageText == "/prospector reset")
-            {
-                MyAPIGateway.Utilities.ShowMessage("Prospector", "Options reset to default");
-                Settings.Instance = Settings.Default;
-                sendToOthers = false;
-            }
-            return;
-        }
-
         private void OnEntityCreate(MyEntity entity)
         {
             if(entity is MyVoxelBase && !(entity is MyPlanet))
@@ -57,11 +22,18 @@ namespace Prospector
                 roid.RemovedFromScene += Roid_RemovedFromScene;
                 newRoids.TryAdd(roid, 0);
             }
-            if(!controlInit && entity is IMyOreDetector)
+            else if (entity is IMyOreDetector && !controlInit)
             {
                 controlInit = true;
                 CreateTerminalControls<IMyOreDetector>();
             }
+        }
+
+        private void Detector_OnClose(MyEntity obj)
+        {
+            var scanner = obj as IMyOreDetector;
+            obj.OnClose -= Detector_OnClose;
+            //TODO force hud stuff off
         }
 
         private void Roid_RemovedFromScene(MyEntity obj)
@@ -73,7 +45,7 @@ namespace Prospector
             byte val;
             newRoids.TryRemove(roid, out val);
             
-            //If it was actively tracked, update storage
+            //If it was actively tracked, update storage and pull from active tracking
             if(voxelScans.Dictionary.ContainsKey(roid))
             {
                 var scan = voxelScans.Dictionary[roid];
@@ -97,6 +69,12 @@ namespace Prospector
                 controlledGrid = null;
                 SaveScans(false);
                 voxelScans.Dictionary.Clear();
+                HudCycleVisibility(false);
+                expandedMode = false;
+                scanRing.Visible = false;
+                currentScanner = null;
+                currentScannerActive = false;
+                currentScannerConfig = null;
             }
             else if (newGrid != null)
             {
@@ -123,6 +101,17 @@ namespace Prospector
                     MyLog.Default.WriteLineAndConsole($"Prospector: Sent settings to player " + steamId + serverList.cfgList.Count);
                     return;
                 }
+            }
+        }
+        private void OreDetector_IsWorkingChanged(IMyCubeBlock obj)
+        {
+            var detector = (IMyOreDetector)obj;
+            if (!detector.IsWorking || !detector.Enabled)
+            {
+                expandedMode = false;
+                HudCycleVisibility(expandedMode);
+                scanRing.Visible = false;
+                currentScannerActive = false;
             }
         }
     }

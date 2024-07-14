@@ -27,7 +27,6 @@ namespace Prospector
             scanDataSaveFile += ".scn";
             if (client)
             {
-                MyAPIGateway.Utilities.MessageEnteredSender += OnMessageEnteredSender;
                 InitConfig();
                 LoadScans();
                 hudAPI = new HudAPIv2(InitMenu);
@@ -66,7 +65,7 @@ namespace Prospector
                     if (controlledGrid.NaturalGravity.LengthSquared() > 4)
                     {
                         var oldPlanetSuppress = planetSuppress;
-                        if (!oldPlanetSuppress && !(Settings.Instance.hideAsteroids || currentScanner.Item1 == null))
+                        if (!oldPlanetSuppress && !(Settings.Instance.hideAsteroids || currentScanner == null))
                             MyAPIGateway.Utilities.ShowNotification("Prospector shutting down due to gravity > 0.2");
                         planetSuppress = true;
                     }
@@ -75,19 +74,24 @@ namespace Prospector
 
                     //Update active scanner
                     //TODO this is crap for multiple scanners on a grid
+                    /*
                     var blockList = controlledGrid.GetFatBlocks();
                     foreach(var block in blockList)
                     {
-                        if (scannerTypes.ContainsKey(block.BlockDefinition.Id.SubtypeId) && block.IsWorking)
+                        var stringSub = block.BlockDefinition.Id.SubtypeId.ToString();
+                        if (scannerTypes.ContainsKey(stringSub) && block.IsWorking)
                         {
-                            if (scannerTypes[block.BlockDefinition.Id.SubtypeId].scanDistance > 0)
+                            if (scannerTypes[stringSub].scanDistance > 0)
                             {
-                                currentScanner = new MyTuple<MyCubeBlock, ScannerConfig>(block, scannerTypes[block.BlockDefinition.Id.SubtypeId]);
+                                currentScanner = new MyTuple<MyCubeBlock, ScannerConfig>(block, scannerTypes[stringSub]);
                                 currentScannerFOVLimit = Math.Cos(MathHelper.ToRadians(currentScanner.Item2.scanFOV));
                             }
                         }
                     }
-                    if (!Settings.Instance.hideAsteroids && currentScanner.Item1 != null && currentScanner.Item1.IsWorking)
+                    */
+
+                    //Pull in new 'roid data
+                    if (!Settings.Instance.hideAsteroids && currentScanner != null && currentScannerActive)
                     {
                         foreach(var objRoid in newRoids.Keys) 
                         {
@@ -98,11 +102,11 @@ namespace Prospector
                             else
                             {
                                 var scan = new VoxelScan();
-                                scan.size = (objRoid.StorageMax.X / currentScanner.Item2.scanSpacing + 1) * (objRoid.StorageMax.Y / currentScanner.Item2.scanSpacing + 1) * (objRoid.StorageMax.Z / currentScanner.Item2.scanSpacing + 1);
+                                scan.size = (objRoid.StorageMax.X / currentScannerConfig.scanSpacing + 1) * (objRoid.StorageMax.Y / currentScannerConfig.scanSpacing + 1) * (objRoid.StorageMax.Z / currentScannerConfig.scanSpacing + 1);
                                 scan.nextScanPosX = objRoid.StorageMin.X;
                                 scan.nextScanPosY = objRoid.StorageMin.Y;
                                 scan.nextScanPosZ = objRoid.StorageMin.Z;
-                                scan.scanSpacing = currentScanner.Item2.scanSpacing;
+                                scan.scanSpacing = currentScannerConfig.scanSpacing;
                                 scan.ore = new SerializableDictionary<string, int>();
                                 voxelScans.Dictionary.Add(objRoid, scan);
                             }
@@ -161,11 +165,8 @@ namespace Prospector
                         MyAPIGateway.Utilities.ShowMissionScreen("Prospector Configs", "", "", d, null, "Close");
                     }
                 }
-
                 if (tick % 300 == 0)
-                {
                     UpdateLists();
-                }
             }
         }
 
@@ -214,7 +215,6 @@ namespace Prospector
         {
             try
             {
-
                 if (MyAPIGateway.Utilities.FileExistsInLocalStorage(scanDataSaveFile, typeof(VoxelScanDict)))
                 {
                     TextReader reader = MyAPIGateway.Utilities.ReadFileInLocalStorage(scanDataSaveFile, typeof(VoxelScanDict));

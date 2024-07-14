@@ -23,14 +23,12 @@ namespace Prospector
                     foreach (var temp in scannerListTemp)
                     {
                         serverList.cfgList.Add(temp);
-                        scannerTypes.Add(MyStringHash.GetOrCompute(temp.subTypeID), temp);
+                        scannerTypes.Add(temp.subTypeID, temp);
                     }
                     rcvdSettings = true;
                 }
                 else
-                {
                     WriteDefaults();
-                }
             }
             catch (Exception e)
             {
@@ -44,13 +42,12 @@ namespace Prospector
             serverList.cfgList.Clear();
             var defaultList = new List<ScannerConfig>();
             var largeScanner = new ScannerConfig() {
-                scansPerTick = 400,
+                scansPerTick = 600,
                 scanDistance = 10000,
-                scanSpacing = 8,
+                scanSpacing = 4,
                 subTypeID = "LargeOreDetector",
                 scanFOV = 15};
             defaultList.Add(largeScanner);
-
             var smallScanner = new ScannerConfig() {
                 scansPerTick = 200,
                 scanDistance = 5000,
@@ -58,23 +55,21 @@ namespace Prospector
                 subTypeID = "SmallBlockOreDetector",
                 scanFOV = 5};
             defaultList.Add(smallScanner);
-
             TextWriter writer;
             writer = MyAPIGateway.Utilities.WriteFileInWorldStorage(scannerCfg, typeof(ScannerConfig));
             writer.Write(MyAPIGateway.Utilities.SerializeToXML(defaultList));
             writer.Close();
-
             foreach (var temp in defaultList)
             {
                 serverList.cfgList.Add(temp);
-                scannerTypes.Add(MyStringHash.GetOrCompute(temp.subTypeID), temp);
+                scannerTypes.Add(temp.subTypeID, temp);
             }
         }
         private void LoadCustomOreTags()
         {
             try
             {
-                if (MyAPIGateway.Utilities.FileExistsInWorldStorage(customOreTags, typeof(OreTags)))//Write config if missing
+                if (MyAPIGateway.Utilities.FileExistsInWorldStorage(customOreTags, typeof(OreTags)))
                 {
                     TextReader reader = MyAPIGateway.Utilities.ReadFileInWorldStorage(customOreTags, typeof(OreTags));
                     var data = MyAPIGateway.Utilities.SerializeFromXML<List<OreTags>>(reader.ReadToEnd());
@@ -87,9 +82,7 @@ namespace Prospector
                     MyLog.Default.WriteLineAndConsole($"[Prospector] Loaded {data.Count} custom ore tags");
                 }
                 else
-                {
                     WriteOreDefaults();
-                }
             }
             catch (Exception e)
             {
@@ -100,14 +93,12 @@ namespace Prospector
         private void WriteOreDefaults()
         {
             oreTagMapCustom.Clear();
-
             var tempCfg = new List<OreTags>()
             {
                 new OreTags() { minedName = "Element Zero", tag = "eezo" },
                 new OreTags() { minedName = "Unobtanium", tag = "Uo" },
                 new OreTags() { minedName = "Lynxite", tag = "Lx" },
             };
-
             TextWriter writer;
             writer = MyAPIGateway.Utilities.WriteFileInWorldStorage(customOreTags, typeof(OreTags));
             writer.Write(MyAPIGateway.Utilities.SerializeToXML(tempCfg));

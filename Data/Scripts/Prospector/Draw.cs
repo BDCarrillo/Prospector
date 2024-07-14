@@ -20,7 +20,9 @@ namespace Prospector
                 try
                 {
                     var s = Settings.Instance;
-                    if (s.hideAsteroids || currentScanner.Item1 == null || !currentScanner.Item1.IsWorking || Session.Camera == null || Session.Player == null || !hudAPI.Heartbeat || planetSuppress) return;
+                    var sessBool = Session.Camera == null || Session.Player == null;
+                    var scannerBool = currentScanner == null || !currentScanner.IsFunctional || !currentScanner.Enabled || !currentScannerActive;
+                    if (sessBool || scannerBool || s.hideAsteroids || !hudAPI.Heartbeat || planetSuppress) return;
                     if (controlledGrid != null && !controlledGrid.MarkedForClose && !controlledGrid.IsStatic)
                     {
                         var viewProjectionMat = Session.Camera.ViewMatrix * Session.Camera.ProjectionMatrix;
@@ -30,7 +32,6 @@ namespace Prospector
                         var scanCenter = controlledGrid.GridIntegerToWorld(entBlock.Position + entBlock.PositionComp.LocalMatrixRef.Up * entBlock.CubeGrid.LocalVolume.Radius * 0.5f / controlledGrid.GridSize);                        
                         Vector3D scanCenterScreenCoords = FirstPersonView ? Vector3D.Zero : Vector3D.Transform(scanCenter, viewProjectionMat);
                         scanRing.Offset = new Vector2D(scanCenterScreenCoords.X, scanCenterScreenCoords.Y);
-                        scanRing.Visible = !expandedMode; //TODO eval if this is the best place to have this, compared to cycle vis
                         var viewRay = FirstPersonView ? new RayD(Session.Camera.Position, Session.Camera.WorldMatrix.Forward) :
                             new RayD(Session.Camera.Position, Vector3D.Normalize(scanCenter - Session.Camera.Position));
 
@@ -142,18 +143,18 @@ namespace Prospector
                                 var obsSize = voxel.PositionComp.LocalVolume.Radius;
                                 obsSize *= 0.5f; //Since 'roid LocalVolumes can be massive.  Unsure if there's a more accurate source of size or center point of actual voxel material                                
                                 var topRightScreen = Vector3D.Transform(position + camMat.Up * obsSize + camMat.Right * obsSize, viewProjectionMat);
-                                var inScanRange = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center) <= currentScanner.Item2.scanDistance * currentScanner.Item2.scanDistance;
+                                var inScanRange = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center) <= currentScannerConfig.scanDistance * currentScannerConfig.scanDistance;
 
                                 bool scanning = false;
                                 if (inScanRange && Vector3D.Dot(Session.Camera.WorldMatrix.Forward, Vector3D.Normalize(position - Session.Camera.Position)) >= currentScannerFOVLimit)//viewRay.Intersects(voxel.PositionComp.WorldAABB) != null)
                                 {
                                     scanning = true;
-                                    if (currentScanner.Item2.scanSpacing < scanData.scanSpacing) //Reset data to use a more precise scanner
+                                    if (currentScannerConfig.scanSpacing < scanData.scanSpacing) //Reset data to use a more precise scanner
                                         ResetData(ref scanData, ref voxel);
                                     var offset = voxel.PositionComp.WorldVolume.Center - voxel.PositionLeftBottomCorner; //Pushes the storage checks to bottom left corner as all storage is positive, world matrix refs center
                                     if (scanData.scanPercent < 1)
                                     {
-                                        for (int i = 0; i < currentScanner.Item2.scansPerTick; i++) //Iterate spaces and check for ore
+                                        for (int i = 0; i < currentScannerConfig.scansPerTick; i++) //Iterate spaces and check for ore
                                         {
                                             var nextScanPos = new Vector3D(scanData.nextScanPosX, scanData.nextScanPosY, scanData.nextScanPosZ);
                                             if ((Vector3I)nextScanPos == voxel.StorageMax)
@@ -238,8 +239,8 @@ namespace Prospector
             scanData.ore.Dictionary.Clear();
             scanData.scanned = 0;
             scanData.scanPercent = 0;
-            scanData.scanSpacing = currentScanner.Item2.scanSpacing;
-            scanData.size = (voxel.StorageMax.X / currentScanner.Item2.scanSpacing + 1) * (voxel.StorageMax.Y / currentScanner.Item2.scanSpacing + 1) * (voxel.StorageMax.Z / currentScanner.Item2.scanSpacing + 1);
+            scanData.scanSpacing = currentScannerConfig.scanSpacing;
+            scanData.size = (voxel.StorageMax.X / currentScannerConfig.scanSpacing + 1) * (voxel.StorageMax.Y / currentScannerConfig.scanSpacing + 1) * (voxel.StorageMax.Z / currentScannerConfig.scanSpacing + 1);
         }
         private void GPSTagSingle(Vector3D position, VoxelScan scanData, long id)
         {

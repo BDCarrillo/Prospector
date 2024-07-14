@@ -1,8 +1,10 @@
-﻿using Sandbox.ModAPI;
+﻿using Sandbox.Game.Entities;
+using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VRage.Game.ModAPI;
 using VRage.Utils;
 
 namespace Prospector
@@ -16,7 +18,6 @@ namespace Prospector
         {
             if (!(block is IMyOreDetector))
                 return;
-
         }
         internal void CustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
         {
@@ -25,18 +26,15 @@ namespace Prospector
 
             foreach (var newControl in ProspectorControls)
                 controls.Add(newControl);
-
         }
         internal void CreateTerminalControls<T>() where T : IMyOreDetector
         {
             ProspectorControls.Add(Separator<T>());
-            ProspectorControls.Add(AddOnOff<T>("scannerOnOff", "Active Scanning", "", "On", "Off", GetActivated, SetActivated, CheckMode, VisibleTrue));
+            ProspectorControls.Add(AddOnOff<T>("scannerOnOff", "Active Scanning", "", "On", "Off", GetActivated, SetActivated, VisibleTrue, VisibleTrue));
+            ProspectorActions.Add(CreateActiveScanAction<T>());
             ProspectorActions.Add(CreateDataViewAction<T>());
             ProspectorActions.Add(CreateResetScanAction<T>());
-            ProspectorActions.Add(CreateActiveScanAction<T>());
             ProspectorActions.Add(CreateGPSTagAction<T>());
-
-
 
             foreach (var action in ProspectorActions)
                 MyAPIGateway.TerminalControls.AddAction<T>(action);
@@ -55,26 +53,20 @@ namespace Prospector
         }
         public static bool VisibleTrue(IMyTerminalBlock block)
         {
-            return scannerTypes.ContainsKey(MyStringHash.GetOrCompute(block.BlockDefinition.SubtypeId));
+            return scannerTypes.ContainsKey(block.BlockDefinition.SubtypeId);
         }
         internal bool GetActivated(IMyTerminalBlock block)
         {
-            var detector = block as IMyOreDetector;
-            //TODO Detector comp?
-
-            return false;
+            return block == currentScanner && currentScannerActive;
         }
         internal void SetActivated(IMyTerminalBlock block, bool activated)
         {
-            //TODO Detector comp?
-
+            UpdateScannerState(block);
             return;
         }
-        private static bool CheckMode(IMyTerminalBlock block)
+        private bool CheckMode(IMyTerminalBlock block)
         {
-            //TODO Detector comp?
-            var detector = block as IMyOreDetector;
-            return true;
+            return block == currentScanner && currentScannerActive;
         }
         internal static IMyTerminalControlOnOffSwitch AddOnOff<T>(string name, string title, string tooltip, string onText, string offText, Func<IMyTerminalBlock, bool> getter, Action<IMyTerminalBlock, bool> setter, Func<IMyTerminalBlock, bool> enabledGetter = null, Func<IMyTerminalBlock, bool> visibleGetter = null) where T : IMyTerminalBlock
         {
@@ -106,8 +98,11 @@ namespace Prospector
         }
         internal void ToggleDataView(IMyTerminalBlock block)
         {
-            expandedMode = !expandedMode;
-            HudCycleVisibility(expandedMode);
+            if (block == currentScanner && currentScannerActive)
+            {
+                expandedMode = !expandedMode;
+                HudCycleVisibility(expandedMode);
+            }
         }
         internal IMyTerminalAction CreateResetScanAction<T>() where T : IMyOreDetector
         {
@@ -139,15 +134,11 @@ namespace Prospector
         }
         internal void ActiveScanActionWriter(IMyTerminalBlock block, StringBuilder builder)
         {
-            //TODO Detector comp?
-
-            builder.Append("Scan: Off");
+            builder.Append("Scan " + (block == currentScanner && currentScannerActive ? "On" : "Off"));
         }
         internal void ToggleActiveScan(IMyTerminalBlock block)
         {
-            //TODO Detector comp?
-
-            queueReScan = true;
+            UpdateScannerState(block);
         }
         internal IMyTerminalAction CreateGPSTagAction<T>() where T : IMyOreDetector
         {
@@ -166,6 +157,24 @@ namespace Prospector
         internal void GPSTagAction(IMyTerminalBlock block)
         {
             queueGPSTag = true;
+        }
+        internal void UpdateScannerState(IMyTerminalBlock block)
+        {
+            if (currentScanner != block)
+            {
+                var detector = (IMyOreDetector)block;
+                currentScanner = detector;
+                currentScannerConfig = scannerTypes[block.BlockDefinition.SubtypeId];
+                detector.IsWorkingChanged += OreDetector_IsWorkingChanged;
+            }
+            currentScannerActive = !currentScannerActive;
+            if (!currentScannerActive)
+            {
+                expandedMode = false;
+                HudCycleVisibility(expandedMode);
+            }
+            scanRing.Visible = currentScannerActive;
+            UpdateLists();
         }
     }
 }
