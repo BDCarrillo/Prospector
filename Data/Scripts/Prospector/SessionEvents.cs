@@ -90,18 +90,9 @@ namespace Prospector
 
         private void PlayerConnected(long id)
         {
-            var playerList = new List<IMyPlayer>();
-            MyAPIGateway.Players.GetPlayers(playerList);
-            foreach (var player in playerList)
-            {
-                if (player.IdentityId == id && !player.IsBot)
-                {
-                    var steamId = MyAPIGateway.Players.TryGetSteamId(id);
-                    Networking.SendToPlayer(new PacketSettings(serverList, oreTagMapCustom), steamId);
-                    MyLog.Default.WriteLineAndConsole($"Prospector: Sent settings to player " + steamId + serverList.cfgList.Count);
-                    return;
-                }
-            }
+            var steamId = MyAPIGateway.Players.TryGetSteamId(id);
+            Networking.SendToPlayer(new PacketSettings(serverList, oreTagMapCustom, serverName), steamId);
+            MyLog.Default.WriteLineAndConsole($"[Prospector] Player connected, settings sent to {steamId}");
         }
         private void OreDetector_IsWorkingChanged(IMyCubeBlock obj)
         {

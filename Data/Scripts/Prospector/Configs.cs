@@ -16,8 +16,9 @@ namespace Prospector
                 {
                     var scannerListTemp = new List<ScannerConfig>();
                     TextReader reader = MyAPIGateway.Utilities.ReadFileInWorldStorage(scannerCfg, typeof(ScannerConfig));
-                    scannerListTemp = MyAPIGateway.Utilities.SerializeFromXML<List<ScannerConfig>>(reader.ReadToEnd());
+                    var rawData = reader.ReadToEnd();
                     reader.Close();
+                    scannerListTemp = MyAPIGateway.Utilities.SerializeFromXML<List<ScannerConfig>>(rawData);
                     scannerTypes.Clear();
                     serverList.cfgList.Clear();
                     foreach (var temp in scannerListTemp)
@@ -26,6 +27,8 @@ namespace Prospector
                         scannerTypes.Add(temp.subTypeID, temp);
                     }
                     rcvdSettings = true;
+                    MyLog.Default.WriteLineAndConsole($"[Prospector] {scannerListTemp.Count} block configs loaded");
+
                 }
                 else
                     WriteDefaults();
@@ -42,7 +45,7 @@ namespace Prospector
             serverList.cfgList.Clear();
             var defaultList = new List<ScannerConfig>();
             var largeScanner = new ScannerConfig() {
-                scansPerTick = 600,
+                scansPerTick = 1200,
                 scanDistance = 10000,
                 scanSpacing = 4,
                 subTypeID = "LargeOreDetector",
@@ -64,6 +67,8 @@ namespace Prospector
                 serverList.cfgList.Add(temp);
                 scannerTypes.Add(temp.subTypeID, temp);
             }
+            MyLog.Default.WriteLineAndConsole($"[Prospector] Using newly written default config");
+
         }
         private void LoadCustomOreTags()
         {
@@ -72,8 +77,9 @@ namespace Prospector
                 if (MyAPIGateway.Utilities.FileExistsInWorldStorage(customOreTags, typeof(OreTags)))
                 {
                     TextReader reader = MyAPIGateway.Utilities.ReadFileInWorldStorage(customOreTags, typeof(OreTags));
-                    var data = MyAPIGateway.Utilities.SerializeFromXML<List<OreTags>>(reader.ReadToEnd());
+                    var rawData = reader.ReadToEnd();
                     reader.Close();
+                    var data = MyAPIGateway.Utilities.SerializeFromXML<List<OreTags>>(rawData);
                     foreach (var tag in data)
                         oreTagMapCustom[tag.minedName] = tag.tag;
                     if(client && server)

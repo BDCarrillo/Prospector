@@ -20,6 +20,7 @@ namespace Prospector
         public static ScannerConfigList serverList = new ScannerConfigList() { cfgList = new List<ScannerConfig>() };
         public static bool rcvdSettings = false;
         public static Dictionary<string, string> oreTagMap = new Dictionary<string, string>();
+        public static string serverName = "";
 
         internal Dictionary<string, string> oreTagMapCustom = new Dictionary<string, string>();
         internal ConcurrentDictionary<MyVoxelBase, byte> newRoids = new ConcurrentDictionary<MyVoxelBase, byte>();
@@ -27,7 +28,6 @@ namespace Prospector
         internal VoxelScanDict voxelScanMemory = new VoxelScanDict() { scans = new SerializableDictionary<long, VoxelScan>() };
         internal MyCubeGrid controlledGrid;
         internal double currentScannerFOVLimit = 0;
-        internal ulong serverID;
         internal string scanDataSaveFile = "ScanData";
         internal string scannerCfg = "ScannerConfigs.cfg";
         internal string customOreTags = "CustomOreTags.cfg";
@@ -81,6 +81,7 @@ namespace Prospector
             {"Gold", "Au"},
             {"Platinum", "Pt"},
             {"Uranium", "U"},
+            {"Iron", "Fe"},
             
             //IO
             {"Sulfur", "S"},

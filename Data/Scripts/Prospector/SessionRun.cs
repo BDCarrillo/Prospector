@@ -11,6 +11,7 @@ using VRage;
 using Digi.NetworkProtobufProspector;
 using Sandbox.Game;
 using Sandbox.Definitions;
+using System.Runtime.CompilerServices;
 
 
 namespace Prospector
@@ -20,24 +21,22 @@ namespace Prospector
     {
         public override void BeforeStart()
         {
-            Networking.Register();
-            serverID = MyAPIGateway.Multiplayer.ServerId;
-            if (serverID > 0)
-                scanDataSaveFile += serverID; //TODO verify this holds up in torch clusters
-            scanDataSaveFile += ".scn";
-            if (client)
-            {
-                InitConfig();
-                LoadScans();
-                hudAPI = new HudAPIv2(InitMenu);
-                maxCheckDist = (int)(Math.Max(Session.SessionSettings.SyncDistance, Session.SessionSettings.ViewDistance) * 1.1f);
-                LoadOreTags();
-            }
+            Networking.Register(this);
             if (server)
             {
                 LoadConfigs();
                 LoadCustomOreTags();
                 MyVisualScriptLogicProvider.PlayerConnected += PlayerConnected;
+                serverName = Session.Name;
+            }
+            if (client)
+            {
+                InitConfig();
+                if(serverName.Length > 0)
+                    LoadScans();
+                hudAPI = new HudAPIv2(InitMenu);
+                maxCheckDist = (int)(Math.Max(Session.SessionSettings.SyncDistance, Session.SessionSettings.ViewDistance) * 1.1f);
+                LoadOreTags();
             }
             if (client && server)
                 rcvdSettings = true; //SP workaround
@@ -211,15 +210,17 @@ namespace Prospector
             }
         }
 
-        private void LoadScans()
+        internal void LoadScans()
         {
+            scanDataSaveFile = "ScanData" + serverName + ".scn";
             try
             {
                 if (MyAPIGateway.Utilities.FileExistsInLocalStorage(scanDataSaveFile, typeof(VoxelScanDict)))
                 {
                     TextReader reader = MyAPIGateway.Utilities.ReadFileInLocalStorage(scanDataSaveFile, typeof(VoxelScanDict));
-                    voxelScanMemory = MyAPIGateway.Utilities.SerializeFromXML<VoxelScanDict>(reader.ReadToEnd());
+                    var rawData = reader.ReadToEnd();
                     reader.Close();
+                    voxelScanMemory = MyAPIGateway.Utilities.SerializeFromXML<VoxelScanDict>(rawData);
                     MyLog.Default.WriteLineAndConsole($"[Prospector] Loaded scan data: " + scanDataSaveFile);
 
                 }
@@ -257,7 +258,7 @@ namespace Prospector
                         MyLog.Default.WriteLine($"[Prospector] Asteroid spawnable ore type found without a linked shorthand for GPS: {matDef.MinedOre}");
                         formattedName = matDef.MinedOre;
                     }
-                    oreTagMap.Add(matDef.MinedOre, formattedName); //TODO hook in serialization of a custom file to add to this, propagated by server
+                    oreTagMap.Add(matDef.MinedOre, formattedName);
                 }
             }
         }

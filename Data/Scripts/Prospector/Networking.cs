@@ -11,20 +11,23 @@ namespace Digi.NetworkProtobufProspector
     public class Networking
     {
         public readonly ushort ChannelId;
+        public static Session session;
 
         public Networking(ushort channelId)
         {
             ChannelId = channelId;
         }
 
-        public void Register()
+        public void Register(Session s)
         {
+            session = s;
             MyAPIGateway.Multiplayer.RegisterMessageHandler(ChannelId, ReceivedPacket);
         }
 
         public void Unregister()
         {
             MyAPIGateway.Multiplayer.UnregisterMessageHandler(ChannelId, ReceivedPacket);
+            session = null;
         }
 
         private void ReceivedPacket(byte[] rawData) // executed when a packet is received on this machine
@@ -76,24 +79,29 @@ namespace Digi.NetworkProtobufProspector
         public ScannerConfigList ScannerConfig;
         [ProtoMember(3)]
         public Dictionary<string, string> OreTags;
+        [ProtoMember(4)]
+        public string ServerName;
 
 
         public PacketSettings() { } // Empty constructor required for deserialization
 
-        public PacketSettings(ScannerConfigList scannerConfig, Dictionary<string, string> oreTags)
+        public PacketSettings(ScannerConfigList scannerConfig, Dictionary<string, string> oreTags, string serverName)
         {
             ScannerConfig = scannerConfig;
             OreTags = oreTags;
+            ServerName = serverName;
         }
 
         public override bool Received()
         {
             if (!MyAPIGateway.Utilities.IsDedicated) //client crap
             {
-                MyLog.Default.WriteLineAndConsole($"Prospector: Received packet");
+                MyLog.Default.WriteLineAndConsole($"[Prospector] Received packet");
 
                 try
                 {
+                    Session.serverName = ServerName;
+                    Networking.session.LoadScans();
                     if (ScannerConfig.cfgList.Count > 0)
                     {
                         Session.scannerTypes.Clear();
@@ -102,7 +110,7 @@ namespace Digi.NetworkProtobufProspector
                             Session.scannerTypes.Add(scanner.subTypeID, scanner);
                         }
                         Session.rcvdSettings = true;
-                        MyLog.Default.WriteLineAndConsole($"Prospector Received {ScannerConfig.cfgList.Count} block settings from server");
+                        MyLog.Default.WriteLineAndConsole($"[Prospector] Received {ScannerConfig.cfgList.Count} block settings from server");
                     }
                     if (OreTags.Count > 0)
                     {
@@ -110,12 +118,12 @@ namespace Digi.NetworkProtobufProspector
                         {
                             Session.oreTagMap[type.Key] = type.Value;
                         }
-                        MyLog.Default.WriteLineAndConsole($"Prospector Received {OreTags.Count} custom ore tags from server");
+                        MyLog.Default.WriteLineAndConsole($"[Prospector] Received {OreTags.Count} custom ore tags from server");
                     }
                 }
                 catch (Exception e)
                 {
-                    MyLog.Default.WriteLineAndConsole($"Prospector: Failed to process packet {e}");
+                    MyLog.Default.WriteLineAndConsole($"[Prospector] Failed to process packet {e}");
                 }
             }
             return false; // relay packet to other clients (only works if server receives it)
