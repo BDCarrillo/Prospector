@@ -27,7 +27,7 @@ namespace Prospector
                 LoadConfigs();
                 LoadCustomOreTags();
                 MyVisualScriptLogicProvider.PlayerConnected += PlayerConnected;
-                serverName = Session.Name;
+                serverName = Session.Name; //TODO see if there's any other good unique identifier
             }
             if (client)
             {
@@ -70,24 +70,6 @@ namespace Prospector
                     }
                     else
                         planetSuppress = false;
-
-                    //Update active scanner
-                    //TODO this is crap for multiple scanners on a grid
-                    /*
-                    var blockList = controlledGrid.GetFatBlocks();
-                    foreach(var block in blockList)
-                    {
-                        var stringSub = block.BlockDefinition.Id.SubtypeId.ToString();
-                        if (scannerTypes.ContainsKey(stringSub) && block.IsWorking)
-                        {
-                            if (scannerTypes[stringSub].scanDistance > 0)
-                            {
-                                currentScanner = new MyTuple<MyCubeBlock, ScannerConfig>(block, scannerTypes[stringSub]);
-                                currentScannerFOVLimit = Math.Cos(MathHelper.ToRadians(currentScanner.Item2.scanFOV));
-                            }
-                        }
-                    }
-                    */
 
                     //Pull in new 'roid data
                     if (!Settings.Instance.hideAsteroids && currentScanner != null && currentScannerActive)
@@ -239,7 +221,7 @@ namespace Prospector
             MyLog.Default.WriteLine("[PROSPECTOR] LoadOreTags started");
             foreach (var matDef in MyDefinitionManager.Static.GetVoxelMaterialDefinitions())
             {
-                if (matDef == null || !matDef.CanBeHarvested || !matDef.SpawnsInAsteroids || matDef.MinedOre == null)
+                if (matDef == null || !matDef.CanBeHarvested || !matDef.SpawnsInAsteroids || matDef.MinedOre == null || !matDef.IsRare)
                     continue;
                 if (!oreTagMap.ContainsKey(matDef.MinedOre))
                 {

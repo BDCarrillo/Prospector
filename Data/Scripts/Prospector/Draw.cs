@@ -73,8 +73,6 @@ namespace Prospector
                                         foundOre += scanData.foundore;
                                         foreach (var ore in scanData.ore.Dictionary)
                                         {
-                                            if (ore.Key == "Stone")
-                                                continue;
                                             if (rollupList.ContainsKey(ore.Key))
                                                 rollupList[ore.Key] += ore.Value;
                                             else
@@ -167,10 +165,13 @@ namespace Prospector
                                             var material = voxel.GetMaterialAt(ref worldCoord);
                                             if (material != null && material.MinedOre != null)
                                             {
-                                                if (!scanData.ore.Dictionary.ContainsKey(material.MinedOre))
-                                                    scanData.ore.Dictionary.Add(material.MinedOre, 1);
-                                                else
-                                                    scanData.ore[material.MinedOre]++;
+                                                if (material.IsRare)
+                                                {
+                                                    if (!scanData.ore.Dictionary.ContainsKey(material.MinedOre))
+                                                        scanData.ore.Dictionary.Add(material.MinedOre, 1);
+                                                    else
+                                                        scanData.ore[material.MinedOre]++;
+                                                }
                                                 scanData.foundore++;
                                             }
                                             scanData.scanned++;
@@ -250,13 +251,10 @@ namespace Prospector
             var info = "";
             foreach (var ore in scanData.ore.Dictionary)
             {
-                if (ore.Key != "Stone")
-                {
-                    var amount = Math.Round((double)ore.Value / scanData.foundore * 100, 2);
-                    var text = amount > 0.00d ? amount + " %" : "Trace";
-                    info += $"{text} {ore.Key}\n";
-                    gpsName += " " + oreTagMap[ore.Key];
-                }
+                var amount = Math.Round((double)ore.Value / scanData.foundore * 100, 2);
+                var text = amount > 0.00d ? amount + " %" : "Trace";
+                info += $"{text} {ore.Key}\n";
+                gpsName += " " + oreTagMap[ore.Key];
             }
             var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, gpsPos, true);
             MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);
@@ -292,12 +290,9 @@ namespace Prospector
             info.AppendLine($"  {scanData.scanSpacing}m Scan");
             foreach (var ore in scanData.ore.Dictionary)
             {
-                if (ore.Key != "Stone")
-                {
-                    var amount = Math.Round((double)ore.Value / scanData.foundore * 100, 2);
-                    var text = amount > 0.00d ? amount + " %" : "Trace";
-                    info.AppendLine($"  {text} {ore.Key}");
-                }
+                var amount = Math.Round((double)ore.Value / scanData.foundore * 100, 2);
+                var text = amount > 0.00d ? amount + " %" : "Trace";
+                info.AppendLine($"  {text} {ore.Key}");
             }
             var labelposition = new Vector2D(screenCoords.X, screenCoords.Y);
             var shadowOffset = new Vector2D(0.003, -0.003);
