@@ -37,6 +37,23 @@ namespace Prospector
 
                         if(expandedMode)
                         {
+                            if(scanLine.Offset.X >= ctrOffset * 2) //Hit end, reset
+                            {
+                                scanLine.Offset = Vector2D.Zero;
+                                scanLine.Visible = false;
+                            }
+                            else if (scanLine.Visible)
+                            {
+                                scanLine.Offset = new Vector2D(scanLine.Offset.X + 0.004f, 0);
+                            }
+                            else if (!scanLine.Visible && tick % 600 == 0)
+                            {
+                                scanLine.Visible = true;
+                            }
+
+
+
+
                             var topRightDraw = new Vector2D(ctrOffset, ctrOffset);
                             var foundOre = 0;
                             double minDist = double.MaxValue;

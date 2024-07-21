@@ -51,6 +51,8 @@ namespace Prospector
         internal bool currentScannerActive;
 
         //Client AV Vars
+        internal MyStringId scanLineTexture = MyStringId.GetOrCompute("WeaponLaser"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
+        internal MyStringId scannerTexture = MyStringId.GetOrCompute("ScannerBG"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId corner = MyStringId.GetOrCompute("SharpEdge"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId missileOutline = MyStringId.GetOrCompute("MissileOutline"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
         internal MyStringId frameCorner = MyStringId.GetOrCompute("FrameCorner"); //Square  GizmoDrawLine  particle_laser ReflectorConeNarrow
@@ -58,6 +60,8 @@ namespace Prospector
         internal MyStringId hollowCircle = MyStringId.GetOrCompute("RoidCircleHollow");
         internal bool expandedMode;
         internal bool hudObjectsRegistered;
+        internal HudAPIv2.BillBoardHUDMessage texture = null;
+        internal HudAPIv2.BillBoardHUDMessage scanLine = null;
         internal HudAPIv2.BillBoardHUDMessage topLeft = null;
         internal HudAPIv2.BillBoardHUDMessage topRight = null;
         internal HudAPIv2.BillBoardHUDMessage botLeft = null;
