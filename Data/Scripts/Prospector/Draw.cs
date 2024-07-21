@@ -25,7 +25,7 @@ namespace Prospector
                     if (sessBool || scannerBool || s.hideAsteroids || !hudAPI.Heartbeat || planetSuppress) return;
                     if (controlledGrid != null && !controlledGrid.MarkedForClose && !controlledGrid.IsStatic)
                     {
-                        var viewProjectionMat = Session.Camera.ViewMatrix * Session.Camera.ProjectionMatrix;
+                        var viewProjectionMat = Session.Camera.ViewMatrix * Session.Camera.ProjectionMatrix * 1.1;
                         var camMat = Session.Camera.WorldMatrix;
                         var FirstPersonView = Session.IsCameraControlledObject && Session.CameraController.IsInFirstPersonView;
                         var entBlock = Session.Player.Controller.ControlledEntity.Entity as IMyCubeBlock;
@@ -52,8 +52,8 @@ namespace Prospector
                                 var position = voxel.PositionComp.WorldAABB.Center;
                                 var screenCoords = Vector3D.Transform(position, viewProjectionMat);
                                 var offscreen = screenCoords.X > 1 || screenCoords.X < -1 || screenCoords.Y > 1 || screenCoords.Y < -1 || screenCoords.Z > 1.000001;
-                                if (offscreen) continue;
-
+                                var dist = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center);
+                                if (offscreen || dist > maxCheckDist) continue;
                                 var drawColor = scanData.scanPercent == 1 ? s.finishedColor : scanData.scanPercent == 0 ? s.obsColor : s.scanColor;
                                 if (screenCoords.X < ctrOffset && screenCoords.X > -ctrOffset && screenCoords.Y < ctrOffset && screenCoords.Y > -ctrOffset)
                                 {
@@ -64,7 +64,6 @@ namespace Prospector
                                     {
                                         totalPos += position;
                                         count++;
-                                        var dist = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center);
                                         if (dist < minDist)
                                             minDist = dist;
                                         if (dist > maxDist)
@@ -136,12 +135,13 @@ namespace Prospector
                                 var position = voxel.PositionComp.WorldAABB.Center;
                                 var screenCoords = Vector3D.Transform(position, viewProjectionMat);
                                 var offscreen = screenCoords.X > 1 || screenCoords.X < -1 || screenCoords.Y > 1 || screenCoords.Y < -1 || screenCoords.Z > 1.000001;
-                                if (offscreen) continue;
+                                var dist = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center);
+                                if (offscreen || dist > maxCheckDist) continue;
 
                                 var obsSize = voxel.PositionComp.LocalVolume.Radius;
                                 obsSize *= 0.5f; //Since 'roid LocalVolumes can be massive.  Unsure if there's a more accurate source of size or center point of actual voxel material                                
                                 var topRightScreen = Vector3D.Transform(position + camMat.Up * obsSize + camMat.Right * obsSize, viewProjectionMat);
-                                var inScanRange = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center) <= currentScannerConfig.scanDistance * currentScannerConfig.scanDistance;
+                                var inScanRange = dist <= currentScannerConfig.scanDistance * currentScannerConfig.scanDistance;
 
                                 bool scanning = false;
                                 if (inScanRange && Vector3D.Dot(Session.Camera.WorldMatrix.Forward, Vector3D.Normalize(position - Session.Camera.Position)) >= currentScannerFOVLimit)//viewRay.Intersects(voxel.PositionComp.WorldAABB) != null)
@@ -213,11 +213,11 @@ namespace Prospector
                                     if (queueGPSTag)
                                         GPSTagSingle(position, scanData, voxel.EntityId);
                                     if (scanData.scanPercent == 1)
-                                        DrawOreLabel(position, obsSize, s.finishedColor, scanData, true, false);
+                                        DrawOreLabel(position, obsSize, s.finishedColor, scanData, true, false, dist);
                                     else if (inScanRange)
-                                        DrawOreLabel(position, obsSize, s.scanColor, scanData, inScanRange, scanning);
+                                        DrawOreLabel(position, obsSize, s.scanColor, scanData, inScanRange, scanning, dist);
                                     else
-                                        DrawOreLabel(position, obsSize, s.obsColor, scanData, inScanRange, false);
+                                        DrawOreLabel(position, obsSize, s.obsColor, scanData, inScanRange, false, dist);
                                 }
                             }
                     }
@@ -278,12 +278,12 @@ namespace Prospector
             var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, position, true);
             MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);
         }
-        private void DrawOreLabel(Vector3D position, float size, Color color, VoxelScan scanData, bool inRange, bool scanning)
+        private void DrawOreLabel(Vector3D position, float size, Color color, VoxelScan scanData, bool inRange, bool scanning, double distSqr)
         {           
             var topRightPos = position + Session.Camera.WorldMatrix.Up * size + Session.Camera.WorldMatrix.Right * size;
             var screenCoords = Session.Camera.WorldToScreen(ref topRightPos);
             var info = new StringBuilder();
-            var distance = Vector3D.Distance(position, controlledGrid.PositionComp.WorldAABB.Center);
+            var distance = Math.Sqrt(distSqr);
             info.AppendLine($"  {(distance > 1000 ? (distance / 1000).ToString("0.0") + " km" : (int)distance + " m")}");
             if (scanData.scanPercent < 1) info.AppendLine($"  {Math.Round(scanData.scanPercent * 100, 0)}% {(scanning ? "Scanning" : "Scanned" )}");
             if (scanData.scanPercent < 1 && !inRange) info.AppendLine($"  {(tick % 60 <= 30 ? "Out Of Range": "")}");

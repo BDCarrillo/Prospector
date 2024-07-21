@@ -1,10 +1,8 @@
-﻿using Sandbox.Game.Entities;
-using Sandbox.ModAPI;
+﻿using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using VRage.Game.ModAPI;
 using VRage.Utils;
 
 namespace Prospector

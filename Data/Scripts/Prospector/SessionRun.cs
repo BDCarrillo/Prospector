@@ -1,17 +1,15 @@
 ﻿using Sandbox.ModAPI;
 using VRage.Game.Components;
-using VRageMath;
 using Sandbox.Game.Entities;
 using VRage.Utils;
 using System;
 using Draygo.API;
 using VRage.Serialization;
 using System.IO;
-using VRage;
 using Digi.NetworkProtobufProspector;
 using Sandbox.Game;
 using Sandbox.Definitions;
-using System.Runtime.CompilerServices;
+using System.Linq;
 
 
 namespace Prospector
@@ -35,7 +33,8 @@ namespace Prospector
                 if(serverName.Length > 0)
                     LoadScans();
                 hudAPI = new HudAPIv2(InitMenu);
-                maxCheckDist = (int)(Math.Max(Session.SessionSettings.SyncDistance, Session.SessionSettings.ViewDistance) * 1.1f);
+                maxCheckDist = (uint)Math.Max(Session.SessionSettings.SyncDistance, Session.SessionSettings.ViewDistance);
+                maxCheckDist *= maxCheckDist;
                 LoadOreTags();
             }
             if (client && server)
@@ -133,7 +132,7 @@ namespace Prospector
                     else
                     {
                         showConfigQueued = false;
-                        string d = "";
+                        string d = "Max Data Display Distance: " + Math.Sqrt(maxCheckDist) + "\n";
                         foreach (var scanner in scannerTypes)
                         {
                             var s = scanner.Value;
@@ -171,12 +170,7 @@ namespace Prospector
             try
             {
                 foreach (var temp in voxelScans.Dictionary)
-                {
-                    if (voxelScanMemory.scans.Dictionary.ContainsKey(temp.Key.EntityId))
-                        voxelScanMemory.scans.Dictionary[temp.Key.EntityId] = temp.Value;
-                    else
-                        voxelScanMemory.scans.Dictionary.Add(temp.Key.EntityId, temp.Value);
-                }
+                    voxelScanMemory.scans.Dictionary[temp.Key.EntityId] = temp.Value;
                 if (writeFile)
                 {
                     TextWriter writer;

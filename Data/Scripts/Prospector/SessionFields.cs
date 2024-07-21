@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using VRage.Game.Components;
 using VRage.Serialization;
 using VRage.Utils;
-using VRage;
 using Sandbox.ModAPI;
 using Sandbox.Game;
 using System.Collections.Concurrent;
@@ -34,7 +33,7 @@ namespace Prospector
         internal float symbolHeight = 0f;//Leave this as zero, monitor aspect ratio is figured in later
         internal float aspectRatio = 0f;//Leave this as zero, monitor aspect ratio is figured in later
         internal float symbolWidth = 0.03f;
-        internal int maxCheckDist = 10000;
+        internal uint maxCheckDist = 0;
         internal int tick = -300;
         internal bool showConfigQueued;
         internal bool controlInit;
