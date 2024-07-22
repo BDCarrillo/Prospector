@@ -97,7 +97,7 @@ namespace Digi.NetworkProtobufProspector
             if (!MyAPIGateway.Utilities.IsDedicated) //client crap
             {
                 MyLog.Default.WriteLineAndConsole($"[Prospector] Received packet");
-
+                Session.registeredController = false;
                 try
                 {
                     Session.serverName = ServerName;

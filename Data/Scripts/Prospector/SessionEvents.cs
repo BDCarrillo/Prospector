@@ -53,7 +53,18 @@ namespace Prospector
         {
             var scanner = obj as IMyOreDetector;
             obj.OnClose -= Detector_OnClose;
-            //TODO force hud stuff off
+            //TODO Verify
+            if (scanner == currentScanner)
+            {
+                SaveScans(false);
+                voxelScans.Dictionary.Clear();
+                HudCycleVisibility(false);
+                expandedMode = false;
+                scanRing.Visible = false;
+                currentScanner = null;
+                currentScannerActive = false;
+                currentScannerConfig = null;
+            }
         }
 
         private void GridChange(VRage.Game.ModAPI.Interfaces.IMyControllableEntity previousEnt, VRage.Game.ModAPI.Interfaces.IMyControllableEntity newEnt)

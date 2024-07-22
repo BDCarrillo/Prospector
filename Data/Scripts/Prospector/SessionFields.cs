@@ -18,6 +18,7 @@ namespace Prospector
         public static Networking Networking = new Networking(5860);
         public static ScannerConfigList serverList = new ScannerConfigList() { cfgList = new List<ScannerConfig>() };
         public static bool rcvdSettings = false;
+        public static bool registeredController;
         public static Dictionary<string, string> oreTagMap = new Dictionary<string, string>();
         public static string serverName = "";
 
@@ -40,7 +41,6 @@ namespace Prospector
         internal bool queueReScan;
         internal bool queueGPSTag;
         internal bool planetSuppress = true;
-        internal bool registeredController;
         internal bool server;
         internal bool client;
         internal bool mpActive;
