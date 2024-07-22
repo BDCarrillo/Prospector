@@ -4,6 +4,7 @@ using Sandbox.ModAPI;
 using VRage.Game.Components;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.Utils;
 
 namespace Prospector
@@ -49,22 +50,19 @@ namespace Prospector
             }
         }
 
-        private void Detector_OnClose(MyEntity obj)
+        private void Detector_OnMarkForClose(IMyEntity obj)
         {
             var scanner = obj as IMyOreDetector;
-            obj.OnClose -= Detector_OnClose;
+            scanner.OnMarkForClose -= Detector_OnMarkForClose;
             //TODO Verify
-            if (scanner == currentScanner)
-            {
-                SaveScans(false);
-                voxelScans.Dictionary.Clear();
-                HudCycleVisibility(false);
-                expandedMode = false;
-                scanRing.Visible = false;
-                currentScanner = null;
-                currentScannerActive = false;
-                currentScannerConfig = null;
-            }
+            SaveScans(false);
+            voxelScans.Dictionary.Clear();
+            HudCycleVisibility(false);
+            expandedMode = false;
+            scanRing.Visible = false;
+            currentScanner = null;
+            currentScannerActive = false;
+            currentScannerConfig = null;
         }
 
         private void GridChange(VRage.Game.ModAPI.Interfaces.IMyControllableEntity previousEnt, VRage.Game.ModAPI.Interfaces.IMyControllableEntity newEnt)
@@ -82,6 +80,8 @@ namespace Prospector
                 HudCycleVisibility(false);
                 expandedMode = false;
                 scanRing.Visible = false;
+                if(currentScanner != null)
+                    currentScanner.OnMarkForClose -= Detector_OnMarkForClose;
                 currentScanner = null;
                 currentScannerActive = false;
                 currentScannerConfig = null;

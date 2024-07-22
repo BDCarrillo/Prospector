@@ -164,6 +164,7 @@ namespace Prospector
                 currentScanner = detector;
                 currentScannerConfig = scannerTypes[block.BlockDefinition.SubtypeId];
                 detector.IsWorkingChanged += OreDetector_IsWorkingChanged;
+                detector.OnMarkForClose += Detector_OnMarkForClose;
             }
             currentScannerActive = !currentScannerActive;
             if (!currentScannerActive)
