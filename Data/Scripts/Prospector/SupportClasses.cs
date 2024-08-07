@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using VRage.Serialization;
 
-namespace Prospector
+namespace Prospector2
 {
     [ProtoContract]
     public class VoxelScanDict

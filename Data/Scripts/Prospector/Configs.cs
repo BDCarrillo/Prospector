@@ -4,7 +4,7 @@ using System.IO;
 using VRage.Utils;
 using System;
 
-namespace Prospector
+namespace Prospector2
 {
     public partial class Session
     {
@@ -27,7 +27,7 @@ namespace Prospector
                         scannerTypes.Add(temp.subTypeID, temp);
                     }
                     rcvdSettings = true;
-                    MyLog.Default.WriteLineAndConsole($"[Prospector] {scannerListTemp.Count} block configs loaded");
+                    MyLog.Default.WriteLineAndConsole($"{modName} {scannerListTemp.Count} block configs loaded");
 
                 }
                 else
@@ -35,7 +35,7 @@ namespace Prospector
             }
             catch (Exception e)
             {
-                MyLog.Default.WriteLineAndConsole($"[Prospector] Error with loading config, writing default to world folder {e}");
+                MyLog.Default.WriteLineAndConsole($"{modName} Error with loading config, writing default to world folder {e}");
                 WriteDefaults();
             }
         }
@@ -67,7 +67,7 @@ namespace Prospector
                 serverList.cfgList.Add(temp);
                 scannerTypes.Add(temp.subTypeID, temp);
             }
-            MyLog.Default.WriteLineAndConsole($"[Prospector] Using newly written default config");
+            MyLog.Default.WriteLineAndConsole($"{modName} Using newly written default config");
 
         }
         private void LoadCustomOreTags()
@@ -85,14 +85,14 @@ namespace Prospector
                     if(client && server)
                         foreach (var tag in data)
                             oreTagMap[tag.minedName] = tag.tag;
-                    MyLog.Default.WriteLineAndConsole($"[Prospector] Loaded {data.Count} custom ore tags");
+                    MyLog.Default.WriteLineAndConsole($"{modName} Loaded {data.Count} custom ore tags");
                 }
                 else
                     WriteOreDefaults();
             }
             catch (Exception e)
             {
-                MyLog.Default.WriteLineAndConsole($"[Prospector] Error with loading custom ore tags, writing default to world folder {e}");
+                MyLog.Default.WriteLineAndConsole($"{modName} Error with loading custom ore tags, writing default to world folder {e}");
                 WriteOreDefaults();
             }
         }

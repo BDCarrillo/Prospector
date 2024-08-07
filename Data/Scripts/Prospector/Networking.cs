@@ -4,7 +4,7 @@ using ProtoBuf;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Utils;
-using Prospector;
+using Prospector2;
 
 namespace Digi.NetworkProtobufProspector
 {
@@ -41,7 +41,7 @@ namespace Digi.NetworkProtobufProspector
             {
                 MyLog.Default.WriteLineAndConsole($"{e.Message}\n{e.StackTrace}");
                 if (MyAPIGateway.Session?.Player != null)
-                    MyAPIGateway.Utilities.ShowNotification($"[Prospector ERROR: {GetType().FullName}: {e.Message} | Send SpaceEngineers.Log to mod author]", 10000, MyFontEnum.Red);
+                    MyAPIGateway.Utilities.ShowNotification($"{Session.modName} ERROR: {GetType().FullName}: {e.Message} | Send SpaceEngineers.Log to mod author]", 10000, MyFontEnum.Red);
             }
         }
 
@@ -96,7 +96,7 @@ namespace Digi.NetworkProtobufProspector
         {
             if (!MyAPIGateway.Utilities.IsDedicated) //client crap
             {
-                MyLog.Default.WriteLineAndConsole($"[Prospector] Received packet");
+                MyLog.Default.WriteLineAndConsole($"{Session.modName} Received packet");
                 Session.registeredController = false;
                 try
                 {
@@ -110,7 +110,7 @@ namespace Digi.NetworkProtobufProspector
                             Session.scannerTypes.Add(scanner.subTypeID, scanner);
                         }
                         Session.rcvdSettings = true;
-                        MyLog.Default.WriteLineAndConsole($"[Prospector] Received {ScannerConfig.cfgList.Count} block settings from server");
+                        MyLog.Default.WriteLineAndConsole($"{Session.modName} Received {ScannerConfig.cfgList.Count} block settings from server");
                     }
                     if (OreTags.Count > 0)
                     {
@@ -118,12 +118,12 @@ namespace Digi.NetworkProtobufProspector
                         {
                             Session.oreTagMap[type.Key] = type.Value;
                         }
-                        MyLog.Default.WriteLineAndConsole($"[Prospector] Received {OreTags.Count} custom ore tags from server");
+                        MyLog.Default.WriteLineAndConsole($"{Session.modName} Received {OreTags.Count} custom ore tags from server");
                     }
                 }
                 catch (Exception e)
                 {
-                    MyLog.Default.WriteLineAndConsole($"[Prospector] Failed to process packet {e}");
+                    MyLog.Default.WriteLineAndConsole($"{Session.modName} Failed to process packet {e}");
                 }
             }
             return false; // relay packet to other clients (only works if server receives it)

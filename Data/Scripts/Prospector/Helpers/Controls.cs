@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using VRage.Utils;
 
-namespace Prospector
+namespace Prospector2
 {
     public partial class Session
     {

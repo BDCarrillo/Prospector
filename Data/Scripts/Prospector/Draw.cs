@@ -9,7 +9,7 @@ using VRage.Game.ModAPI;
 using System.Collections.Generic;
 using Sandbox.Game.Entities;
 
-namespace Prospector
+namespace Prospector2
 {
     public partial class Session : MySessionComponentBase
     {
@@ -117,6 +117,7 @@ namespace Prospector
                             if (textList.Count > 0)
                             {
                                 textList.Sort();
+                                finalText.Append($"  {(foundOre > 1000 ? (foundOre / 1000).ToString("0") + " km" : foundOre + " m")}^3\n");
                                 foreach (var entry in textList)
                                     finalText.Append(entry + "\n");
                                 message.Message = finalText;
@@ -241,8 +242,8 @@ namespace Prospector
                 }
                 catch (Exception e)
                 {
-                    MyAPIGateway.Utilities.ShowNotification($"[Prospector] Draw exception {e}");
-                    MyLog.Default.WriteLineAndConsole($"[Prospector] Error while trying to draw {e}");
+                    MyAPIGateway.Utilities.ShowNotification($"{modName} Draw exception {e}");
+                    MyLog.Default.WriteLineAndConsole($"{modName} Error while trying to draw {e}");
                 }
             queueReScan = false;
             queueGPSTag = false;
@@ -305,6 +306,7 @@ namespace Prospector
             if (scanData.scanPercent < 1) info.AppendLine($"  {Math.Round(scanData.scanPercent * 100, 0)}% {(scanning ? "Scanning" : "Scanned" )}");
             if (scanData.scanPercent < 1 && !inRange) info.AppendLine($"  {(tick % 60 <= 30 ? "Out Of Range": "")}");
             info.AppendLine($"  {scanData.scanSpacing}m Scan");
+            if (scanData.scanPercent == 1) info.AppendLine($"  {(scanData.foundore > 1000 ? (scanData.foundore / 1000).ToString("0") + " km" : scanData.foundore + " m")}^3");
             foreach (var ore in scanData.ore.Dictionary)
             {
                 var amount = Math.Round((double)ore.Value / scanData.foundore * 100, 2);

@@ -9,10 +9,9 @@ using System.IO;
 using Digi.NetworkProtobufProspector;
 using Sandbox.Game;
 using Sandbox.Definitions;
-using System.Linq;
 
 
-namespace Prospector
+namespace Prospector2
 {
     [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation)]
     public partial class Session : MySessionComponentBase
@@ -64,7 +63,7 @@ namespace Prospector
                     {
                         var oldPlanetSuppress = planetSuppress;
                         if (!oldPlanetSuppress && !(Settings.Instance.hideAsteroids || currentScanner == null))
-                            MyAPIGateway.Utilities.ShowNotification("Prospector shutting down due to gravity > 0.2");
+                            MyAPIGateway.Utilities.ShowNotification("Prospector2 shutting down due to gravity > 0.2");
                         planetSuppress = true;
                     }
                     else
@@ -96,8 +95,8 @@ namespace Prospector
             }
             catch (Exception e)
             {
-                MyAPIGateway.Utilities.ShowNotification($"[Prospector]  Well something went wrong in Update {e}");
-                MyLog.Default.WriteLineAndConsole($"[Prospector] Well something went wrong in Update {e}");
+                MyAPIGateway.Utilities.ShowNotification($"{modName}  Well something went wrong in Update {e}");
+                MyLog.Default.WriteLineAndConsole($"{modName} Well something went wrong in Update {e}");
             }
         }
 
@@ -117,7 +116,7 @@ namespace Prospector
                     {
                         Session.Player.Controller.ControlledEntityChanged += GridChange;
                         GridChange(null, Session.Player.Controller.ControlledEntity);
-                        MyLog.Default.WriteLineAndConsole($"Prospector: Registered controller");
+                        MyLog.Default.WriteLineAndConsole($"{modName} Registered controller");
                         registeredController = true;
                     }
                     catch { }
@@ -127,7 +126,7 @@ namespace Prospector
                 {
                     if (MyAPIGateway.Gui.ChatEntryVisible)
                     {
-                        MyAPIGateway.Utilities.ShowNotification("Hit Enter to close chat and display Prospector block configs", 16, "Red");
+                        MyAPIGateway.Utilities.ShowNotification("Hit Enter to close chat and display Prospector2 block configs", 16, "Red");
                     }
                     else
                     {
@@ -142,7 +141,7 @@ namespace Prospector
                                 "  Scan Spacing:" + s.scanSpacing + "m\n" +
                                 "  Scans per Tick:" + s.scansPerTick + "\n \n";
                         }
-                        MyAPIGateway.Utilities.ShowMissionScreen("Prospector Configs", "", "", d, null, "Close");
+                        MyAPIGateway.Utilities.ShowMissionScreen("Prospector2 Configs", "", "", d, null, "Close");
                     }
                 }
                 if (tick % 300 == 0)
@@ -177,12 +176,12 @@ namespace Prospector
                     writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(scanDataSaveFile, typeof(VoxelScanDict));
                     writer.Write(MyAPIGateway.Utilities.SerializeToXML(voxelScanMemory));
                     writer.Close();
-                    MyLog.Default.WriteLineAndConsole($"[Prospector] Saved scan data: " + scanDataSaveFile);
+                    MyLog.Default.WriteLineAndConsole($"{modName} Saved scan data: " + scanDataSaveFile);
                 }
             }
             catch (Exception e)
             {
-                MyLog.Default.WriteLineAndConsole($"[Prospector] Failed to save scan data {e}");
+                MyLog.Default.WriteLineAndConsole($"{modName} Failed to save scan data {e}");
             }
         }
 
@@ -197,22 +196,22 @@ namespace Prospector
                     var rawData = reader.ReadToEnd();
                     reader.Close();
                     voxelScanMemory = MyAPIGateway.Utilities.SerializeFromXML<VoxelScanDict>(rawData);
-                    MyLog.Default.WriteLineAndConsole($"[Prospector] Loaded scan data: " + scanDataSaveFile);
+                    MyLog.Default.WriteLineAndConsole($"{modName} Loaded scan data: " + scanDataSaveFile);
 
                 }
                 else
-                    MyLog.Default.WriteLineAndConsole($"[Prospector] No existing scan data found, creating new file: " + scanDataSaveFile);
+                    MyLog.Default.WriteLineAndConsole($"{modName} No existing scan data found, creating new file: " + scanDataSaveFile);
             }
             catch (Exception e)
             {
-                MyLog.Default.WriteLineAndConsole($"[Prospector] Failed to load scan data {e}");
-                MyAPIGateway.Utilities.ShowMessage("Prospector", $"Error loading saved info");
+                MyLog.Default.WriteLineAndConsole($"{modName} Failed to load scan data {e}");
+                MyAPIGateway.Utilities.ShowMessage($"{modName}", $"Error loading saved info");
             }
         }      
 
         private void LoadOreTags()
         {
-            MyLog.Default.WriteLine("[PROSPECTOR] LoadOreTags started");
+            MyLog.Default.WriteLine($"{modName} LoadOreTags started");
             foreach (var matDef in MyDefinitionManager.Static.GetVoxelMaterialDefinitions())
             {
                 if (matDef == null || !matDef.CanBeHarvested || !matDef.SpawnsInAsteroids || matDef.MinedOre == null || !matDef.IsRare)
@@ -231,7 +230,7 @@ namespace Prospector
                         formattedName = oreDefaults[matDef.MinedOre]; 
                     else
                     {
-                        MyLog.Default.WriteLine($"[Prospector] Asteroid spawnable ore type found without a linked shorthand for GPS: {matDef.MinedOre}");
+                        MyLog.Default.WriteLine($"{modName} Asteroid spawnable ore type found without a linked shorthand for {matDef.MinedOre}");
                         formattedName = matDef.MinedOre;
                     }
                     oreTagMap.Add(matDef.MinedOre, formattedName);

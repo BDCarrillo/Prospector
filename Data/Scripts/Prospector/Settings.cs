@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using VRageMath;
 
-namespace Prospector
+namespace Prospector2
 {
     [ProtoContract]
     public class Settings
@@ -66,7 +66,7 @@ namespace Prospector
                 Settings.Instance = Settings.Default;
                 s = Settings.Default;
                 Save(s);
-                MyAPIGateway.Utilities.ShowNotification("Prospector: Error with config file, overwriting with default." + e);
+                MyAPIGateway.Utilities.ShowNotification($"{modName} Error with config file, overwriting with default." + e);
             }
         }
         public static void Save(Settings settings)
@@ -82,7 +82,7 @@ namespace Prospector
             }
             catch (Exception e)
             {
-                MyAPIGateway.Utilities.ShowMessage("Prospector", "Error saving cfg file");
+                MyAPIGateway.Utilities.ShowMessage($"{modName}", "Error saving cfg file");
             }
         }
 
@@ -91,7 +91,7 @@ namespace Prospector
         HudAPIv2.MenuColorPickerInput ObsColor, FinishColor, ScanColor, ExpandedColor;
         private void InitMenu()
         {
-            SettingsMenu = new HudAPIv2.MenuRootCategory("Prospector", HudAPIv2.MenuRootCategory.MenuFlag.PlayerMenu, "Prospector Settings");
+            SettingsMenu = new HudAPIv2.MenuRootCategory("Prospector2", HudAPIv2.MenuRootCategory.MenuFlag.PlayerMenu, "Prospector2 Settings");
             AsteroidEnable = new HudAPIv2.MenuItem("Hide asteroid display: " + Settings.Instance.hideAsteroids, SettingsMenu, ShowAsteroids);
             SymbolEnableObs = new HudAPIv2.MenuItem("Show bounding box: " + Settings.Instance.enableSymbols, SettingsMenu, ShowSymbolsObs);
             LabelEnableObs = new HudAPIv2.MenuItem("Show labels: " + Settings.Instance.enableLabels, SettingsMenu, ShowLabelsObs);

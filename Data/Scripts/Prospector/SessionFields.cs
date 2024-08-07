@@ -9,7 +9,7 @@ using Sandbox.ModAPI;
 using Sandbox.Game;
 using System.Collections.Concurrent;
 
-namespace Prospector
+namespace Prospector2
 {
     public partial class Session : MySessionComponentBase
     {
@@ -21,6 +21,7 @@ namespace Prospector
         public static bool registeredController;
         public static Dictionary<string, string> oreTagMap = new Dictionary<string, string>();
         public static string serverName = "";
+        public static string modName = "[Prospector2]";
 
         internal Dictionary<string, string> oreTagMapCustom = new Dictionary<string, string>();
         internal ConcurrentDictionary<MyVoxelBase, byte> newRoids = new ConcurrentDictionary<MyVoxelBase, byte>();

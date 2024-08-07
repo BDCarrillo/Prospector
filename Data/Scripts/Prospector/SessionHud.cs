@@ -2,7 +2,7 @@
 using System.Text;
 using VRageMath;
 
-namespace Prospector
+namespace Prospector2
 {
     public partial class Session
     {
