@@ -8,6 +8,7 @@ using System.Text;
 using VRage.Game.ModAPI;
 using System.Collections.Generic;
 using Sandbox.Game.Entities;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace Prospector2
 {
@@ -43,19 +44,13 @@ namespace Prospector2
                                 scanLine.Visible = false;
                             }
                             else if (scanLine.Visible)
-                            {
                                 scanLine.Offset = new Vector2D(scanLine.Offset.X + 0.004f, 0);
-                            }
                             else if (!scanLine.Visible && tick % 600 == 0)
-                            {
                                 scanLine.Visible = true;
-                            }
-
-
-
 
                             var topRightDraw = new Vector2D(ctrOffset, ctrOffset);
                             var foundOre = 0;
+                            var volume = 0d;
                             double minDist = double.MaxValue;
                             double maxDist = 0;
                             var rollupList = new Dictionary<string, int>();
@@ -87,6 +82,7 @@ namespace Prospector2
                                             maxDist = dist;
 
                                         foundOre += scanData.foundore;
+                                        volume += scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000d;
                                         foreach (var ore in scanData.ore.Dictionary)
                                         {
                                             if (rollupList.ContainsKey(ore.Key))
@@ -114,10 +110,12 @@ namespace Prospector2
                                 }
                             }
                             var finalText = new StringBuilder();
+                            var stringVol = volume.ToString("0.00") + " km^3";
                             if (textList.Count > 0)
                             {
                                 textList.Sort();
-                                finalText.Append($"  {(foundOre > 1000 ? (foundOre / 1000).ToString("0") + " km" : foundOre + " m")}^3\n");
+                                finalText.AppendLine($"  {stringVol}");
+                                //finalText.Append($"  {(foundOre > 1000 ? (foundOre / 1000).ToString("0") + " km" : foundOre + " m")}^3\n");
                                 foreach (var entry in textList)
                                     finalText.Append(entry + "\n");
                                 message.Message = finalText;
@@ -141,7 +139,7 @@ namespace Prospector2
                                 {
                                     var pos = totalPos / count;
                                     var dispersion = Math.Sqrt(maxDist) - Math.Sqrt(minDist);
-                                    GPSTagMultiple(textList, count, dispersion, pos, rollupList);
+                                    GPSTagMultiple(textList, count, dispersion, pos, rollupList, stringVol);
                                 }
                             }
                         }
@@ -274,10 +272,13 @@ namespace Prospector2
                 info += $"{text} {ore.Key}\n";
                 gpsName += " " + oreTagMap[ore.Key];
             }
+            var volume = (scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000d).ToString("0.00") + " km^3";
+            gpsName += " " + volume;
+            info += $"Scanned material: {volume}";
             var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, gpsPos, true);
             MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);
         }
-        private void GPSTagMultiple(List<string> ores, int count, double dispersion, Vector3D position, Dictionary<string, int> rollup)
+        private void GPSTagMultiple(List<string> ores, int count, double dispersion, Vector3D position, Dictionary<string, int> rollup, string volume)
         {
             //This goofy naming ID thing should give repeatable results for the same cluster.  Is that necessary? Probably not.
             var x = ((int)position.X).ToString();
@@ -292,7 +293,9 @@ namespace Prospector2
             {
                 gpsName += " " + oreTagMap[ore];
             }
-            info += (dispersion > 1000 ? (dispersion / 1000).ToString("0.0") + " km" : (int)dispersion + " m") + " dispersion";
+            info += (dispersion > 1000 ? (dispersion / 1000).ToString("0.0") + " km" : (int)dispersion + " m") + " dispersion\n";
+            gpsName += " " + volume;
+            info += $"Scanned material: {volume}"; 
             var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, position, true);
             MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);
         }
@@ -306,7 +309,12 @@ namespace Prospector2
             if (scanData.scanPercent < 1) info.AppendLine($"  {Math.Round(scanData.scanPercent * 100, 0)}% {(scanning ? "Scanning" : "Scanned" )}");
             if (scanData.scanPercent < 1 && !inRange) info.AppendLine($"  {(tick % 60 <= 30 ? "Out Of Range": "")}");
             info.AppendLine($"  {scanData.scanSpacing}m Scan");
-            if (scanData.scanPercent == 1) info.AppendLine($"  {(scanData.foundore > 1000 ? (scanData.foundore / 1000).ToString("0") + " km" : scanData.foundore + " m")}^3");
+            if (scanData.scanPercent == 1)
+            {
+                var volume = scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000d;
+                info.AppendLine($"  {volume.ToString("0.00")} km^3");
+                //info.AppendLine($"  {(scanData.foundore > 1000 ? (scanData.foundore / 1000).ToString("0") + " km" : scanData.foundore + " m")}^3");
+            }
             foreach (var ore in scanData.ore.Dictionary)
             {
                 var amount = Math.Round((double)ore.Value / scanData.foundore * 100, 2);
