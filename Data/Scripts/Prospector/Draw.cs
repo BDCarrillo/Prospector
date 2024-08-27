@@ -273,7 +273,7 @@ namespace Prospector2
                 gpsName += " " + oreTagMap[ore.Key];
             }
             var volume = (scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000d).ToString("0.00") + " km^3";
-            gpsName += " " + volume;
+            if (Settings.Instance.gpsIncludeVol) gpsName += " " + volume;
             info += $"Scanned material: {volume}";
             var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, gpsPos, true);
             MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);
@@ -294,7 +294,7 @@ namespace Prospector2
                 gpsName += " " + oreTagMap[ore];
             }
             info += (dispersion > 1000 ? (dispersion / 1000).ToString("0.0") + " km" : (int)dispersion + " m") + " dispersion\n";
-            gpsName += " " + volume;
+            if (Settings.Instance.gpsIncludeVol) gpsName += " " + volume;
             info += $"Scanned material: {volume}"; 
             var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, position, true);
             MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);

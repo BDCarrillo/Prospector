@@ -19,6 +19,8 @@ namespace Prospector2
             obsColor = Color.Goldenrod,
             finishedColor = Color.LawnGreen,
             scanColor = Color.Yellow,
+            expandedColor = Color.PowderBlue,
+            gpsIncludeVol = true,
         };
 
         [ProtoMember(1)]
@@ -35,6 +37,8 @@ namespace Prospector2
         public Color scanColor { get; set; } = Color.Yellow;
         [ProtoMember(7)]
         public Color expandedColor { get; set; } = Color.PowderBlue;
+        [ProtoMember(8)]
+        public bool gpsIncludeVol { get; set; } = true;
     }
     public partial class Session
     {
@@ -87,7 +91,7 @@ namespace Prospector2
         }
 
         HudAPIv2.MenuRootCategory SettingsMenu;
-        HudAPIv2.MenuItem AsteroidEnable, SymbolEnableObs, LabelEnableObs, ShowConfigs;
+        HudAPIv2.MenuItem AsteroidEnable, SymbolEnableObs, LabelEnableObs, ShowConfigs, ShowVol;
         HudAPIv2.MenuColorPickerInput ObsColor, FinishColor, ScanColor, ExpandedColor;
         private void InitMenu()
         {
@@ -99,10 +103,16 @@ namespace Prospector2
             ScanColor = new HudAPIv2.MenuColorPickerInput("Set in range but unscanned asteroid symbol/text color >", SettingsMenu, Settings.Instance.scanColor, "Select color", ChangeScanColor);
             FinishColor = new HudAPIv2.MenuColorPickerInput("Set scanned symbol/text color >", SettingsMenu, Settings.Instance.finishedColor, "Select color", ChangeFinishedColor);
             ExpandedColor = new HudAPIv2.MenuColorPickerInput("Set data review mode color >", SettingsMenu, Settings.Instance.expandedColor, "Select color", ChangeExpandedColor);
+            ShowVol = new HudAPIv2.MenuItem("Include volume in GPS label: " + Settings.Instance.gpsIncludeVol, SettingsMenu, ShowVolume);
             ShowConfigs = new HudAPIv2.MenuItem("Display configs (click here then hit enter to see info) >>", SettingsMenu, ShowCfgs);
             HudRegisterObjects();
         }
-
+        private void ShowVolume()
+        {
+            Settings.Instance.gpsIncludeVol = !Settings.Instance.gpsIncludeVol;
+            ShowVol.Text = "Include volume in GPS label: " + Settings.Instance.gpsIncludeVol;
+            Save(Settings.Instance);
+        }
         private void ShowCfgs()
         {
             showConfigQueued = true;
