@@ -101,6 +101,8 @@ namespace Prospector2
         private void PlayerConnected(long id)
         {
             var steamId = MyAPIGateway.Players.TryGetSteamId(id);
+            if (server && client && id == Session.Player.IdentityId)
+                return;
             Networking.SendToPlayer(new PacketSettings(serverList, oreTagMapCustom, serverName), steamId);
             MyLog.Default.WriteLineAndConsole($"{modName} Player connected, settings sent to {steamId}");
         }

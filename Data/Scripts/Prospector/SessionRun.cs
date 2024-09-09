@@ -44,7 +44,7 @@ namespace Prospector2
         {
             mpActive = MyAPIGateway.Multiplayer.MultiplayerActive;
             server = (mpActive && MyAPIGateway.Multiplayer.IsServer) || !mpActive;
-            client = (mpActive && !MyAPIGateway.Multiplayer.IsServer) || !mpActive;
+            client = (mpActive && !MyAPIGateway.Utilities.IsDedicated) || !mpActive;
             if (client)
             {
                 MyEntities.OnEntityCreate += OnEntityCreate;
