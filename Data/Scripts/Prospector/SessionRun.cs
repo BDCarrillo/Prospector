@@ -9,6 +9,7 @@ using System.IO;
 using Digi.NetworkProtobufProspector;
 using Sandbox.Game;
 using Sandbox.Definitions;
+using System.Linq;
 
 
 namespace Prospector2
@@ -24,7 +25,7 @@ namespace Prospector2
                 LoadConfigs();
                 LoadCustomOreTags();
                 MyVisualScriptLogicProvider.PlayerConnected += PlayerConnected;
-                serverName = Session.Name; //TODO see if there's any other good unique identifier
+                serverName = string.Concat(Session.Name.Split(Path.GetInvalidFileNameChars()));
             }
             if (client)
             {
@@ -197,10 +198,9 @@ namespace Prospector2
                     reader.Close();
                     voxelScanMemory = MyAPIGateway.Utilities.SerializeFromXML<VoxelScanDict>(rawData);
                     MyLog.Default.WriteLineAndConsole($"{modName} Loaded scan data: " + scanDataSaveFile);
-
                 }
                 else
-                    MyLog.Default.WriteLineAndConsole($"{modName} No existing scan data found, creating new file: " + scanDataSaveFile);
+                    MyLog.Default.WriteLineAndConsole($"{modName} No existing scan data found, will create new file on first save named: " + scanDataSaveFile);
             }
             catch (Exception e)
             {
