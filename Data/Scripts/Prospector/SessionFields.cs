@@ -68,6 +68,7 @@ namespace Prospector2
         internal HudAPIv2.BillBoardHUDMessage botLeft = null;
         internal HudAPIv2.BillBoardHUDMessage botRight = null;
         internal HudAPIv2.BillBoardHUDMessage scanRing = null;
+        internal HudAPIv2.BillBoardHUDMessage scanRing2 = null;
         internal HudAPIv2.HUDMessage message = null;
         internal HudAPIv2.HUDMessage title = null;
         internal double ctrOffset = 0.25;

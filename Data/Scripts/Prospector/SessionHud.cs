@@ -20,6 +20,7 @@ namespace Prospector2
             botRight = new HudAPIv2.BillBoardHUDMessage(frameCorner, botRightDraw, s.expandedColor, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, Rotation: 3.14159f, HideHud: true, Shadowing: true);
             botLeft = new HudAPIv2.BillBoardHUDMessage(frameCorner, botLeftDraw, s.expandedColor, Width: symbolWidth * sizeMult, Height: symbolHeight * sizeMult, Rotation: -1.5708f, HideHud: true, Shadowing: true);
             scanRing = new HudAPIv2.BillBoardHUDMessage(hollowCircle, Vector2D.Zero, Color.White, Width: symbolWidth * 1.5f, Height: symbolHeight * 1.5f, HideHud: true, Shadowing: true);
+            scanRing2 = new HudAPIv2.BillBoardHUDMessage(hollowCircle, Vector2D.Zero, Color.Gray, Width: symbolWidth * 1.6f, Height: symbolHeight * 1.6f, HideHud: true, Shadowing: true);
             texture = new HudAPIv2.BillBoardHUDMessage(scannerTexture, Vector2D.Zero, s.expandedColor, Width: (float)ctrOffset*2 + symbolWidth * sizeMult, Height: (float)ctrOffset*2 + symbolHeight * sizeMult, HideHud: true, Blend: VRageRender.MyBillboard.BlendTypeEnum.AdditiveTop);
             scanLine = new HudAPIv2.BillBoardHUDMessage(scanLineTexture, midLeftDraw, s.expandedColor, Width: symbolHeight * 0.05f, Height: (float)ctrOffset * 2 + symbolHeight * sizeMult, HideHud: true, Blend: VRageRender.MyBillboard.BlendTypeEnum.AdditiveTop);
             message = new HudAPIv2.HUDMessage(new StringBuilder(), topRightDraw, new Vector2D(.01, .025), -1, 1, true, true);
@@ -34,6 +35,7 @@ namespace Prospector2
             botRight.Visible = false;
             botLeft.Visible = false;
             scanRing.Visible = false;
+            scanRing2.Visible = false;
             texture.Visible = false;
             scanLine.Visible = false;
             hudObjectsRegistered = true;
@@ -54,6 +56,7 @@ namespace Prospector2
         private void HudCycleVisibility(bool visible)
         {
             scanRing.Visible = !visible;
+            scanRing2.Visible = false;
             title.Visible = visible;
             message.Visible = visible;
             topLeft.Visible = visible;

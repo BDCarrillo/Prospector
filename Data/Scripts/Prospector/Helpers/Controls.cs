@@ -165,6 +165,8 @@ namespace Prospector2
                 currentScannerConfig = scannerTypes[block.BlockDefinition.SubtypeId];
                 detector.IsWorkingChanged += OreDetector_IsWorkingChanged;
                 detector.OnMarkForClose += Detector_OnMarkForClose;
+                //Calc FOV limit to something usable for DOT comparison
+                currentScannerFOVLimit = Math.Cos(currentScannerConfig.scanFOV * 0.01745329251);
             }
             currentScannerActive = !currentScannerActive;
             if (!currentScannerActive)
@@ -173,6 +175,7 @@ namespace Prospector2
                 HudCycleVisibility(expandedMode);
             }
             scanRing.Visible = currentScannerActive;
+            scanRing2.Visible = currentScannerActive;
             UpdateLists();
         }
     }

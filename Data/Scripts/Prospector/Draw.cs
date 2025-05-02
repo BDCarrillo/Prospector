@@ -8,7 +8,6 @@ using System.Text;
 using VRage.Game.ModAPI;
 using System.Collections.Generic;
 using Sandbox.Game.Entities;
-using System.Runtime.InteropServices.ComTypes;
 
 namespace Prospector2
 {
@@ -36,9 +35,9 @@ namespace Prospector2
                         var viewRay = FirstPersonView ? new RayD(Session.Camera.Position, Session.Camera.WorldMatrix.Forward) :
                             new RayD(Session.Camera.Position, Vector3D.Normalize(scanCenter - Session.Camera.Position));
 
-                        if(expandedMode)
+                        if (expandedMode)
                         {
-                            if(scanLine.Offset.X >= ctrOffset * 2) //Hit end, reset
+                            if (scanLine.Offset.X >= ctrOffset * 2) //Hit end, reset
                             {
                                 scanLine.Offset = Vector2D.Zero;
                                 scanLine.Visible = false;
@@ -100,9 +99,9 @@ namespace Prospector2
                                 }
                             }
                             var textList = new List<string>();
-                            if(rollupList.Count > 0)
+                            if (rollupList.Count > 0)
                             {
-                                foreach(var ore in rollupList)
+                                foreach (var ore in rollupList)
                                 {
                                     var amount = Math.Round((double)ore.Value / foundOre * 100, 2);
                                     var info = $"  {ore.Key} {(amount > 0.00d ? amount + " %" : "- Trace")}";
@@ -115,7 +114,6 @@ namespace Prospector2
                             {
                                 textList.Sort();
                                 finalText.AppendLine($"  {stringVol}");
-                                //finalText.Append($"  {(foundOre > 1000 ? (foundOre / 1000).ToString("0") + " km" : foundOre + " m")}^3\n");
                                 foreach (var entry in textList)
                                     finalText.Append(entry + "\n");
                                 message.Message = finalText;
@@ -128,7 +126,7 @@ namespace Prospector2
                                 var min = Math.Sqrt(minDist);
                                 var max = Math.Sqrt(maxDist);
                                 //TODO Consider reworking to distance to center of cluster with +/- from there
-                                finalText.AppendLine($"  {(min > 1000 ? (min / 1000).ToString("0.0") + " km" : (int)min + " m")} {(min != max ? (max > 1000 ? "- " + (max / 1000).ToString("0.0") + " km" : "- " + (int)max + " m")  : "")}");
+                                finalText.AppendLine($"  {(min > 1000 ? (min / 1000).ToString("0.0") + " km" : (int)min + " m")} {(min != max ? (max > 1000 ? "- " + (max / 1000).ToString("0.0") + " km" : "- " + (int)max + " m") : "")}");
                             }
                             message.Message = finalText;
                             if (maxDist != 0 && queueGPSTag)
@@ -144,6 +142,11 @@ namespace Prospector2
                             }
                         }
                         else
+                        {
+                            scanRing2.Scale += 0.005f;
+                            if (scanRing2.Scale >= 2.5)
+                                scanRing2.Scale = 1;
+
                             foreach (var keyValuePair in voxelScans.Dictionary)
                             {
                                 var voxel = keyValuePair.Key;
@@ -160,7 +163,7 @@ namespace Prospector2
                                 var inScanRange = dist <= currentScannerConfig.scanDistance * currentScannerConfig.scanDistance;
 
                                 bool scanning = false;
-                                if (inScanRange && Vector3D.Dot(Session.Camera.WorldMatrix.Forward, Vector3D.Normalize(position - Session.Camera.Position)) >= currentScannerFOVLimit)//viewRay.Intersects(voxel.PositionComp.WorldAABB) != null)
+                                if (inScanRange && Vector3D.Dot(Session.Camera.WorldMatrix.Forward, Vector3D.Normalize(position - Session.Camera.Position)) >= currentScannerFOVLimit)
                                 {
                                     scanning = true;
                                     if (currentScannerConfig.scanSpacing < scanData.scanSpacing) //Reset data to use a more precise scanner
@@ -176,7 +179,7 @@ namespace Prospector2
                                                 scanData.scanPercent = 1;
                                                 break;
                                             }
-                                    
+
                                             var worldCoord = Vector3D.Transform(nextScanPos, voxel.PositionComp.WorldMatrixRef) - offset;
                                             var material = voxel.GetMaterialAt(ref worldCoord);
                                             if (material != null && material.MinedOre != null)
@@ -207,21 +210,21 @@ namespace Prospector2
                                                 }
                                             }
                                         }
-                                    }                            
+                                    }
                                 }
                                 if (s.enableSymbols)
                                     if (scanData.scanPercent == 1)
                                         DrawFrame(topRightScreen, screenCoords, s.finishedColor.ToVector4());
                                     else if (scanning)
                                     {
-                                        if((tick + 15) % 60 <= 20)
+                                        if ((tick + 15) % 60 <= 20)
                                             DrawFrame(topRightScreen, screenCoords, s.scanColor.ToVector4());
                                     }
                                     else if (inScanRange)
                                         DrawFrame(topRightScreen, screenCoords, s.scanColor.ToVector4());
                                     else
                                         DrawFrame(topRightScreen, screenCoords, s.obsColor.ToVector4());
-                                if(queueReScan && viewRay.Intersects(voxel.PositionComp.WorldAABB) != null)
+                                if (queueReScan && viewRay.Intersects(voxel.PositionComp.WorldAABB) != null)
                                     ResetData(ref scanData, ref voxel);
 
                                 if (s.enableLabels && (viewRay.Intersects(voxel.PositionComp.WorldAABB) != null))
@@ -236,6 +239,7 @@ namespace Prospector2
                                         DrawOreLabel(position, obsSize, s.obsColor, scanData, inScanRange, false, dist);
                                 }
                             }
+                        }
                     }
                 }
                 catch (Exception e)
@@ -313,7 +317,6 @@ namespace Prospector2
             {
                 var volume = scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000d;
                 info.AppendLine($"  {volume.ToString("0.00")} km^3");
-                //info.AppendLine($"  {(scanData.foundore > 1000 ? (scanData.foundore / 1000).ToString("0") + " km" : scanData.foundore + " m")}^3");
             }
             foreach (var ore in scanData.ore.Dictionary)
             {

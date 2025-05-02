@@ -60,6 +60,7 @@ namespace Prospector2
             HudCycleVisibility(false);
             expandedMode = false;
             scanRing.Visible = false;
+            scanRing2.Visible = false;
             currentScanner = null;
             currentScannerActive = false;
             currentScannerConfig = null;
@@ -80,7 +81,8 @@ namespace Prospector2
                 HudCycleVisibility(false);
                 expandedMode = false;
                 scanRing.Visible = false;
-                if(currentScanner != null)
+                scanRing2.Visible = false;
+                if (currentScanner != null)
                     currentScanner.OnMarkForClose -= Detector_OnMarkForClose;
                 currentScanner = null;
                 currentScannerActive = false;
@@ -114,6 +116,7 @@ namespace Prospector2
                 expandedMode = false;
                 HudCycleVisibility(expandedMode);
                 scanRing.Visible = false;
+                scanRing2.Visible = false;
                 currentScannerActive = false;
             }
         }

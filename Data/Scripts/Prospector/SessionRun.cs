@@ -132,15 +132,18 @@ namespace Prospector2
                     else
                     {
                         showConfigQueued = false;
-                        string d = "Max Data Display Distance: " + Math.Sqrt(maxCheckDist) + "\n";
+                        string d = $"Max Data Display Distance: {Math.Sqrt(maxCheckDist)} \n" +
+                            $"Sync Distance: {Session.SessionSettings.SyncDistance}\n" +
+                            $"View Distance: {Session.SessionSettings.ViewDistance}\n";
+
                         foreach (var scanner in scannerTypes)
                         {
                             var s = scanner.Value;
                             d += "Block SubType: " + s.subTypeID + "\n" +
-                                "  Scan Distance:" + s.scanDistance + "m\n" +
-                                "  Scan FOV:" + s.scanFOV + "\n" +
-                                "  Scan Spacing:" + s.scanSpacing + "m\n" +
-                                "  Scans per Tick:" + s.scansPerTick + "\n \n";
+                                "  Scan Distance: " + s.scanDistance + "m\n" +
+                                "  Scan FOV: " + s.scanFOV + "\n" +
+                                "  Scan Spacing: " + s.scanSpacing + "m\n" +
+                                "  Scans per Tick: " + s.scansPerTick + "\n \n";
                         }
                         MyAPIGateway.Utilities.ShowMissionScreen("Prospector2 Configs", "", "", d, null, "Close");
                     }
