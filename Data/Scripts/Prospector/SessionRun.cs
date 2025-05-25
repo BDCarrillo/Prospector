@@ -9,7 +9,6 @@ using System.IO;
 using Digi.NetworkProtobufProspector;
 using Sandbox.Game;
 using Sandbox.Definitions;
-using System.Linq;
 
 
 namespace Prospector2

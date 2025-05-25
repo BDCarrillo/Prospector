@@ -126,6 +126,16 @@ namespace Prospector2
             currentScanner = null;
             voxelScanMemory.scans.Dictionary.Clear();
             controlledGrid = null;
+            texture = null;
+            scanLine = null;
+            topLeft = null;
+            topRight = null;
+            botLeft = null;
+            botRight = null;
+            scanRing = null;
+            scanRing2 = null;
+            message = null;
+            title = null;
         }
     }
 }
