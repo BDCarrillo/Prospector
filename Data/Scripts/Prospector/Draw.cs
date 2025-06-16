@@ -1,14 +1,12 @@
 ﻿using Sandbox.ModAPI;
 using VRage.Game.Components;
 using VRageMath;
-using VRage.Utils;
 using System;
 using Draygo.API;
 using System.Text;
 using VRage.Game.ModAPI;
 using System.Collections.Generic;
 using Sandbox.Game.Entities;
-using VRage.Game;
 
 namespace Prospector2
 {
@@ -213,17 +211,24 @@ namespace Prospector2
                                     }
                                 }
                                 if (s.enableSymbols)
-                                    if (scanData.scanPercent == 1)
-                                        DrawFrame(topRightScreen, screenCoords, s.finishedColor.ToVector4());
-                                    else if (scanning)
+                                    if (inScanRange)
                                     {
-                                        if ((tick + 15) % 60 <= 20)
+                                        if (scanData.scanPercent == 1)
+                                            DrawFrame(topRightScreen, screenCoords, s.finishedColor.ToVector4());
+                                        else if (scanning && (tick + 15) % 60 <= 20)
+                                            DrawFrame(topRightScreen, screenCoords, s.scanColor.ToVector4());
+                                        else if (!scanning)
                                             DrawFrame(topRightScreen, screenCoords, s.scanColor.ToVector4());
                                     }
-                                    else if (inScanRange)
-                                        DrawFrame(topRightScreen, screenCoords, s.scanColor.ToVector4());
                                     else
-                                        DrawFrame(topRightScreen, screenCoords, s.obsColor.ToVector4());
+                                    {
+                                        Color dotColor;
+                                        if (scanData.scanPercent == 1)
+                                            dotColor = s.finishedColor.ToVector4();
+                                        else
+                                            dotColor = s.obsColor.ToVector4();
+                                        var dot = new HudAPIv2.BillBoardHUDMessage(solidCircle, new Vector2D(screenCoords.X, screenCoords.Y), dotColor, Width: symbolWidth * .65f, Height: symbolHeight * .65f, TimeToLive: 2, Rotation: 0, HideHud: true, Shadowing: true);
+                                    }
 
                                 var intersectSphere = new BoundingSphereD(position, obsSize);
                                 if (queueReScan && viewRay.Intersects(intersectSphere) != null)

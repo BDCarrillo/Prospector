@@ -102,8 +102,10 @@ namespace Prospector2
                         MyAPIGateway.Utilities.ShowMissionScreen("Prospector2 Configs", "", "", d, null, "Close");
                     }
                 }
+
                 if (tick % 300 == 0)
                     UpdateLists();
+
                 //Background task to figure actual bounds/center
                 if (!processingBounds)
                 {
@@ -112,8 +114,9 @@ namespace Prospector2
                         if (scan.Value.actualCenter == Vector3D.Zero && scan.Key.InScene)
                         {
                             boundsScan = scan.Key;
-                            processingBounds = true;
-                            BGTask = MyAPIGateway.Parallel.StartBackground(ProcessBounds);
+                            processingBounds = true; 
+                            //DigiMode2();
+                            BGTask = MyAPIGateway.Parallel.StartBackground(ProcessBoundsDigified);
                             break;
                         }
                     }

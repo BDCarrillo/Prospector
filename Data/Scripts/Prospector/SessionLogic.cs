@@ -5,9 +5,9 @@ using VRage.Serialization;
 using System.IO;
 using Sandbox.Definitions;
 using VRageMath;
-using ParallelTasks;
 using VRage.Voxels;
-using Sandbox.Game.Entities;
+using Draygo.API;
+using System.Text;
 
 
 namespace Prospector2
@@ -62,98 +62,156 @@ namespace Prospector2
             }
         }
 
-        private void ProcessBounds()
+        private void DigiMode2()
         {
-            if (BGTask.valid && BGTask.Exceptions != null)
-                TaskHasErrors(ref BGTask, "BGTask");
-
-            var voxel = boundsScan;
-            var start = Vector3I.Zero;
-            var end = new Vector3I(31, 31, 31);
-            int LOD = 6;
-            var mult = boundsScan.Storage.Size.X / 32;
-
+            if (boundsScan == null || boundsScan.MarkedForClose || boundsScan.Closed)
+                return;
+            /*
             switch (boundsScan.Storage.Size.X)
             {
                 case 64:
-                    LOD = 1;
+                    LOD = 0;
                     break;
                 case 128:
-                    LOD = 2;
+                    LOD = 0;
                     break;
                 case 256:
-                    LOD = 3;
+                    LOD = 0;
                     break;
                 case 512:
-                    LOD = 4;
+                    LOD = 0;
                     break;
                 case 1024:
+                    LOD = 1;
+                    break;
+                case 2048:
+                    LOD = 2;
+                    break;
+            }
+            */
+            int LOD = 3;
+
+            Vector3I start = boundsScan.StorageMin >> LOD;
+            Vector3I end = (boundsScan.StorageMax >> LOD) - 1;
+            int cellSize = (1 << LOD);
+            float cellSizeHalf = cellSize * 0.5f;
+
+            MyStorageData temp = new MyStorageData(MyStorageDataTypeFlags.ContentAndMaterial);
+            temp.Resize(start, end);
+
+            boundsScan.Storage.ReadRange(temp, MyStorageDataTypeFlags.ContentAndMaterial, LOD, start, end);
+
+            bool bbValid = false;
+            BoundingBox contentBB = BoundingBox.CreateInvalid();
+
+            for (int i = 0; i < temp.SizeLinear; i++)
+            {
+                var content = temp[MyStorageDataTypeEnum.Content][i];
+                
+                Vector3I pos;
+                temp.ComputePosition(i, out pos);
+                pos += start;
+                pos <<= LOD; // turn into real voxel coords
+
+                Vector3 localPos = pos;
+                localPos -= boundsScan.SizeInMetresHalf; // worldmatrix.Translation is boundingbox center, shift positions accordingly
+                localPos += cellSizeHalf; // shift to center of the cell
+
+                if (content > MyVoxelConstants.VOXEL_ISO_LEVEL)
+                {
+                    contentBB.Include(localPos);
+                    bbValid = true;
+                    var material = temp[MyStorageDataTypeEnum.Material][i];
+                    var voxelDef = MyDefinitionManager.Static.GetVoxelMaterialDefinition(material);
+                    if (voxelDef != null && voxelDef.MinedOre != "Stone")
+                    {
+                        Log.Line($"{voxelDef.MinedOre}");
+                        //fun draws
+                        float contentRatio = content / 255f;
+                        Vector3D world = Vector3D.Transform(localPos, boundsScan.WorldMatrix);
+                        float radius = cellSizeHalf * 10;
+                        //MyTransparentGeometry.AddPointBillboard(solidCircle, Color.Red * 3f, world, radius, 0f, -1, MyBillboard.BlendTypeEnum.AdditiveTop);
+
+                        var camMat = Session.Camera.WorldMatrix;
+                        var ore = new HudAPIv2.SpaceMessage(new StringBuilder($"<color=255,0,0> {voxelDef.MinedOre}"), world, camMat.Up, camMat.Left, 50);
+                    }
+                }
+            }
+            
+            if (bbValid)
+            {
+                Vector3D min = Vector3D.Transform(contentBB.Min, boundsScan.WorldMatrix);
+                Vector3D worldCenter = Vector3D.Transform(contentBB.Center, boundsScan.WorldMatrix);
+                var radius = Vector3D.Distance(worldCenter, min);
+            }
+        }
+
+        private void ProcessBoundsDigified()
+        {
+            //Thanks to Digi (once again) for this
+            int LOD = 6;
+            switch (boundsScan.Storage.Size.X)
+            {
+                case 64:
+                    LOD = 2;
+                    break;
+                case 128:
+                    LOD = 3;
+                    break;
+                case 256:
+                    LOD = 4;
+                    break;
+                case 512:
                     LOD = 5;
+                    break;
+                case 1024:
+                    LOD = 6;
                     break;
                 case 2048:
                     LOD = 6;
                     break;
             }
+            Vector3I start = boundsScan.StorageMin >> LOD;
+            Vector3I end = (boundsScan.StorageMax >> LOD) - 1;
+            int cellSize = (1 << LOD);
+            float cellSizeHalf = cellSize * 0.5f;
 
             MyStorageData temp = new MyStorageData(MyStorageDataTypeFlags.Content);
             temp.Resize(start, end);
 
             boundsScan.Storage.ReadRange(temp, MyStorageDataTypeFlags.Content, LOD, start, end);
-            Vector3I pos;
+            byte[] voxelContent = temp[MyStorageDataTypeEnum.Content];
 
-            var sumPos = new Vector3D();
-            int count = 0;
-            int minX = int.MaxValue;
-            int minY = int.MaxValue;
-            int minZ = int.MaxValue;
-            int maxX = 0;
-            int maxY = 0;
-            int maxZ = 0;
+            bool bbValid = false;
+            BoundingBox contentBB = BoundingBox.CreateInvalid();
 
-            for (int i = 0; i < temp.SizeLinear; i++)
+            for (int i = 0; i < voxelContent.Length; i++)
             {
-                var content = temp[0][i];
-                if (content > 127)
+                byte content = voxelContent[i];
+                if (content > MyVoxelConstants.VOXEL_ISO_LEVEL)
                 {
+                    Vector3I pos;
                     temp.ComputePosition(i, out pos);
-                    sumPos += pos;
-                    count++;
-                    if (pos.X < minX)
-                        minX = pos.X;
-                    else if (pos.X > maxX)
-                        maxX = pos.X;
-                    if (pos.Y < minY)
-                        minY = pos.Y;
-                    else if (pos.Y > maxY)
-                        maxY = pos.Y;
-                    if (pos.Z < minZ)
-                        minZ = pos.Z;
-                    else if (pos.Z > maxZ)
-                        maxZ = pos.Z;
+                    pos += start;
+                    pos <<= LOD; // turn into real voxel coords
+                    Vector3 localPos = pos;
+                    localPos -= boundsScan.SizeInMetresHalf; // worldmatrix.Translation is boundingbox center, shift positions accordingly
+                    localPos += cellSizeHalf; // shift to center of the cell
+                    contentBB.Include(localPos);
+                    bbValid = true;
                 }
             }
-            var lower = Vector3D.Transform(new Vector3D(minX, minY, minZ) * mult - boundsScan.PositionComp.LocalAABB.HalfExtents, boundsScan.PositionComp.WorldMatrixRef);
-            var upper = Vector3D.Transform(new Vector3D(maxX, maxY, maxZ) * mult - boundsScan.PositionComp.LocalAABB.HalfExtents, boundsScan.PositionComp.WorldMatrixRef);
 
-            if (voxelScans.Dictionary.ContainsKey(boundsScan))
+            if (bbValid && voxelScans.Dictionary.ContainsKey(boundsScan))
             {
-                voxelScans[boundsScan].actualCenter = new Vector3D((int)((lower.X + upper.X) / 2), (int)((lower.Y + upper.Y) / 2), (int)((lower.Z + upper.Z) / 2));
-                voxelScans[boundsScan].actualSize = (int)(Vector3D.Distance(upper, lower) * 0.35f); //Scaled down from 0.5f for better visual fit
+                Vector3D min = Vector3D.Transform(contentBB.Min, boundsScan.WorldMatrix);
+                Vector3D worldCenter = Vector3D.Transform(contentBB.Center, boundsScan.WorldMatrix);
+                var radius = Vector3D.Distance(worldCenter, min) * 0.75f;
+
+                voxelScans[boundsScan].actualCenter = worldCenter;
+                voxelScans[boundsScan].actualSize = (int)radius;
             }
             processingBounds = false;
-        }
-
-        public bool TaskHasErrors(ref Task task, string taskName)
-        {
-            if (task.Exceptions != null && task.Exceptions.Length > 0)
-            {
-                foreach (var e in task.Exceptions)
-                {
-                    Log.Line($"{modName} {taskName} thread!\n{e}");
-                }
-                return true;
-            }
-            return false;
         }
 
         private void SaveScans(bool writeFile)
