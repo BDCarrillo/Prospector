@@ -146,12 +146,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\Scripts\Prospector\Helpers\Controls.cs" />
+    <Compile Include="Data\Scripts\Prospector\Helpers\Log.cs" />
     <Compile Include="Data\Scripts\Prospector\SessionFields.cs" />
     <Compile Include="Data\Scripts\Prospector\SessionHud.cs" />
     <Compile Include="Data\Scripts\Prospector\Networking.cs" />
     <Compile Include="Data\Scripts\Prospector\Helpers\HudAPIv2.cs" />
     <Compile Include="Data\Scripts\Prospector\Configs.cs" />
     <Compile Include="Data\Scripts\Prospector\SessionEvents.cs" />
+    <Compile Include="Data\Scripts\Prospector\SessionLogic.cs" />
     <Compile Include="Data\Scripts\Prospector\Settings.cs" />
     <Compile Include="Data\Scripts\Prospector\Draw.cs" />
     <Compile Include="Data\Scripts\Prospector\SessionRun.cs" />

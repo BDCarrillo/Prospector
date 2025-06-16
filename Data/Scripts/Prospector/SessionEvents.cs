@@ -5,7 +5,6 @@ using VRage.Game.Components;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
-using VRage.Utils;
 
 namespace Prospector2
 {
@@ -106,7 +105,7 @@ namespace Prospector2
             if (server && client && id == Session.Player.IdentityId)
                 return;
             Networking.SendToPlayer(new PacketSettings(serverList, oreTagMapCustom, serverName), steamId);
-            MyLog.Default.WriteLineAndConsole($"{modName} Player connected, settings sent to {steamId}");
+            Log.Line($"{modName} Player connected, settings sent to {steamId}");
         }
         private void OreDetector_IsWorkingChanged(IMyCubeBlock obj)
         {

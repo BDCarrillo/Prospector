@@ -56,7 +56,7 @@ namespace Prospector2
         private void HudCycleVisibility(bool visible)
         {
             scanRing.Visible = !visible;
-            scanRing2.Visible = false;
+            scanRing2.Visible = !visible;
             title.Visible = visible;
             message.Visible = visible;
             topLeft.Visible = visible;

@@ -105,7 +105,6 @@ namespace Prospector2
             ExpandedColor = new HudAPIv2.MenuColorPickerInput("Set data review mode color >", SettingsMenu, Settings.Instance.expandedColor, "Select color", ChangeExpandedColor);
             ShowVol = new HudAPIv2.MenuItem("Include volume in GPS label: " + Settings.Instance.gpsIncludeVol, SettingsMenu, ShowVolume);
             ShowConfigs = new HudAPIv2.MenuItem("Display configs (click here then hit enter to see info) >>", SettingsMenu, ShowCfgs);
-            HudRegisterObjects();
         }
         private void ShowVolume()
         {

@@ -1,6 +1,7 @@
 ﻿using ProtoBuf;
 using System.Collections.Generic;
 using VRage.Serialization;
+using VRageMath;
 
 namespace Prospector2
 {
@@ -34,6 +35,10 @@ namespace Prospector2
         public int nextScanPosY { get; set; }
         [ProtoMember(9)]
         public int nextScanPosZ { get; set; }
+        [ProtoMember(10)]
+        public Vector3D actualCenter { get; set; }
+        [ProtoMember(11)]
+        public int actualSize { get; set; }
     }
 
     [ProtoContract]

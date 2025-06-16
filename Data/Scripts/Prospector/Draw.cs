@@ -8,6 +8,7 @@ using System.Text;
 using VRage.Game.ModAPI;
 using System.Collections.Generic;
 using Sandbox.Game.Entities;
+using VRage.Game;
 
 namespace Prospector2
 {
@@ -29,9 +30,11 @@ namespace Prospector2
                         var camMat = Session.Camera.WorldMatrix;
                         var FirstPersonView = Session.IsCameraControlledObject && Session.CameraController.IsInFirstPersonView;
                         var entBlock = Session.Player.Controller.ControlledEntity.Entity as IMyCubeBlock;
-                        var scanCenter = controlledGrid.GridIntegerToWorld(entBlock.Position + entBlock.PositionComp.LocalMatrixRef.Up * entBlock.CubeGrid.LocalVolume.Radius * 0.5f / controlledGrid.GridSize);                        
+                        var scanCenter = controlledGrid.GridIntegerToWorld(entBlock.Position + entBlock.PositionComp.LocalMatrixRef.Up * entBlock.CubeGrid.LocalVolume.Radius * 0.6f / controlledGrid.GridSize);                        
                         Vector3D scanCenterScreenCoords = FirstPersonView ? Vector3D.Zero : Vector3D.Transform(scanCenter, viewProjectionMat);
                         scanRing.Offset = new Vector2D(scanCenterScreenCoords.X, scanCenterScreenCoords.Y);
+                        scanRing2.Offset = new Vector2D(scanCenterScreenCoords.X, scanCenterScreenCoords.Y);
+
                         var viewRay = FirstPersonView ? new RayD(Session.Camera.Position, Session.Camera.WorldMatrix.Forward) :
                             new RayD(Session.Camera.Position, Vector3D.Normalize(scanCenter - Session.Camera.Position));
 
@@ -60,7 +63,7 @@ namespace Prospector2
                             {
                                 var voxel = keyValuePair.Key;
                                 var scanData = keyValuePair.Value;
-                                var position = voxel.PositionComp.WorldAABB.Center;
+                                var position = scanData.actualCenter == Vector3D.Zero ? voxel.PositionComp.WorldAABB.Center : scanData.actualCenter;
                                 var screenCoords = Vector3D.Transform(position, viewProjectionMat);
                                 var offscreen = screenCoords.X > 1 || screenCoords.X < -1 || screenCoords.Y > 1 || screenCoords.Y < -1 || screenCoords.Z > 1.000001;
                                 var dist = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center);
@@ -132,7 +135,7 @@ namespace Prospector2
                             if (maxDist != 0 && queueGPSTag)
                             {
                                 if (count == 1)
-                                    GPSTagSingle(lastFound.Key.PositionComp.WorldAABB.Center, lastFound.Value, lastFound.Key.EntityId);
+                                    GPSTagSingle(lastFound.Value.actualCenter != Vector3D.Zero ? lastFound.Value.actualCenter : lastFound.Key.PositionComp.WorldAABB.Center, lastFound.Value, lastFound.Key.EntityId);
                                 else
                                 {
                                     var pos = totalPos / count;
@@ -151,17 +154,14 @@ namespace Prospector2
                             {
                                 var voxel = keyValuePair.Key;
                                 var scanData = keyValuePair.Value;
-                                var position = voxel.PositionComp.WorldAABB.Center;
+                                var position = scanData.actualCenter == Vector3D.Zero ? voxel.PositionComp.WorldAABB.Center : scanData.actualCenter;
                                 var screenCoords = Vector3D.Transform(position, viewProjectionMat);
                                 var offscreen = screenCoords.X > 1 || screenCoords.X < -1 || screenCoords.Y > 1 || screenCoords.Y < -1 || screenCoords.Z > 1.000001;
                                 var dist = Vector3D.DistanceSquared(position, controlledGrid.PositionComp.WorldAABB.Center);
                                 if (offscreen || dist > maxCheckDist) continue;
-
-                                var obsSize = voxel.PositionComp.LocalVolume.Radius;
-                                obsSize *= 0.5f; //Since 'roid LocalVolumes can be massive.  Unsure if there's a more accurate source of size or center point of actual voxel material                                
+                                var obsSize = scanData.actualSize == 0f ? voxel.PositionComp.LocalVolume.Radius * 0.5f : scanData.actualSize;
                                 var topRightScreen = Vector3D.Transform(position + camMat.Up * obsSize + camMat.Right * obsSize, viewProjectionMat);
                                 var inScanRange = dist <= currentScannerConfig.scanDistance * currentScannerConfig.scanDistance;
-
                                 bool scanning = false;
                                 if (inScanRange && Vector3D.Dot(Session.Camera.WorldMatrix.Forward, Vector3D.Normalize(position - Session.Camera.Position)) >= currentScannerFOVLimit)
                                 {
@@ -224,10 +224,12 @@ namespace Prospector2
                                         DrawFrame(topRightScreen, screenCoords, s.scanColor.ToVector4());
                                     else
                                         DrawFrame(topRightScreen, screenCoords, s.obsColor.ToVector4());
-                                if (queueReScan && viewRay.Intersects(voxel.PositionComp.WorldAABB) != null)
+
+                                var intersectSphere = new BoundingSphereD(position, obsSize);
+                                if (queueReScan && viewRay.Intersects(intersectSphere) != null)
                                     ResetData(ref scanData, ref voxel);
 
-                                if (s.enableLabels && (viewRay.Intersects(voxel.PositionComp.WorldAABB) != null))
+                                if (s.enableLabels && (viewRay.Intersects(intersectSphere) != null))
                                 {
                                     if (queueGPSTag)
                                         GPSTagSingle(position, scanData, voxel.EntityId);
@@ -245,7 +247,7 @@ namespace Prospector2
                 catch (Exception e)
                 {
                     MyAPIGateway.Utilities.ShowNotification($"{modName} Draw exception {e}");
-                    MyLog.Default.WriteLineAndConsole($"{modName} Error while trying to draw {e}");
+                    Log.Line($"{modName} Error while trying to draw {e}");
                 }
             queueReScan = false;
             queueGPSTag = false;
@@ -279,6 +281,8 @@ namespace Prospector2
             var volume = (scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000d).ToString("0.00") + " km^3";
             if (Settings.Instance.gpsIncludeVol) gpsName += " " + volume;
             info += $"Scanned material: {volume}";
+            if (scanData.scanPercent != 1)
+                info += "\n--SCAN INCOMPLETE--";
             var gps = MyAPIGateway.Session.GPS.Create(gpsName, info, gpsPos, true);
             MyAPIGateway.Session.GPS.AddGps(Session.Player.IdentityId, gps);
         }
@@ -294,9 +298,7 @@ namespace Prospector2
             foreach (var ore in ores)
                 info += ore + "\n";
             foreach(var ore in rollup.Keys)
-            {
                 gpsName += " " + oreTagMap[ore];
-            }
             info += (dispersion > 1000 ? (dispersion / 1000).ToString("0.0") + " km" : (int)dispersion + " m") + " dispersion\n";
             if (Settings.Instance.gpsIncludeVol) gpsName += " " + volume;
             info += $"Scanned material: {volume}"; 

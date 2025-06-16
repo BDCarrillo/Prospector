@@ -6,8 +6,8 @@ using VRage.Game.Components;
 using VRage.Serialization;
 using VRage.Utils;
 using Sandbox.ModAPI;
-using Sandbox.Game;
 using System.Collections.Concurrent;
+using ParallelTasks;
 
 namespace Prospector2
 {
@@ -45,6 +45,9 @@ namespace Prospector2
         internal bool server;
         internal bool client;
         internal bool mpActive;
+        internal bool processingBounds = false;
+        internal Task BGTask = new Task();
+        internal MyVoxelBase boundsScan;
 
         //Current scanner tracking
         internal IMyOreDetector currentScanner = null;
@@ -100,42 +103,7 @@ namespace Prospector2
 
         private void Clean()
         {
-            if (client)
-            {
-                SaveScans(true);
-                if (hudAPI != null)
-                    hudAPI.Unload();
 
-                if (registeredController)
-                    MyAPIGateway.Session.Player.Controller.ControlledEntityChanged -= GridChange;
-                MyEntities.OnEntityCreate -= OnEntityCreate;
-            }
-            if (server)
-            {
-                MyVisualScriptLogicProvider.PlayerConnected -= PlayerConnected;
-            }
-            Networking?.Unregister();
-            Networking = null;
-
-            //Data purge
-            scannerTypes.Clear();
-            serverList.cfgList.Clear();
-            oreTagMap.Clear();
-            newRoids.Clear();
-            voxelScans.Dictionary.Clear();
-            currentScanner = null;
-            voxelScanMemory.scans.Dictionary.Clear();
-            controlledGrid = null;
-            texture = null;
-            scanLine = null;
-            topLeft = null;
-            topRight = null;
-            botLeft = null;
-            botRight = null;
-            scanRing = null;
-            scanRing2 = null;
-            message = null;
-            title = null;
         }
     }
 }

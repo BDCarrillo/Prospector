@@ -1,7 +1,6 @@
 ﻿using Sandbox.ModAPI;
 using System.Collections.Generic;
 using System.IO;
-using VRage.Utils;
 using System;
 
 namespace Prospector2
@@ -27,7 +26,7 @@ namespace Prospector2
                         scannerTypes.Add(temp.subTypeID, temp);
                     }
                     rcvdSettings = true;
-                    MyLog.Default.WriteLineAndConsole($"{modName} {scannerListTemp.Count} block configs loaded");
+                    Log.Line($"{modName} {scannerListTemp.Count} block configs loaded");
 
                 }
                 else
@@ -35,7 +34,7 @@ namespace Prospector2
             }
             catch (Exception e)
             {
-                MyLog.Default.WriteLineAndConsole($"{modName} Error with loading config, writing default to world folder {e}");
+                Log.Line($"{modName} Error with loading config, writing default to world folder {e}");
                 WriteDefaults();
             }
         }
@@ -67,7 +66,7 @@ namespace Prospector2
                 serverList.cfgList.Add(temp);
                 scannerTypes.Add(temp.subTypeID, temp);
             }
-            MyLog.Default.WriteLineAndConsole($"{modName} Using newly written default config");
+            Log.Line($"{modName} Using newly written default config");
 
         }
         private void LoadCustomOreTags()
@@ -85,14 +84,14 @@ namespace Prospector2
                     if(client && server)
                         foreach (var tag in data)
                             oreTagMap[tag.minedName] = tag.tag;
-                    MyLog.Default.WriteLineAndConsole($"{modName} Loaded {data.Count} custom ore tags");
+                    Log.Line($"{modName} Loaded {data.Count} custom ore tags");
                 }
                 else
                     WriteOreDefaults();
             }
             catch (Exception e)
             {
-                MyLog.Default.WriteLineAndConsole($"{modName} Error with loading custom ore tags, writing default to world folder {e}");
+                Log.Line($"{modName} Error with loading custom ore tags, writing default to world folder {e}");
                 WriteOreDefaults();
             }
         }
