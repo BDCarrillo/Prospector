@@ -1,6 +1,7 @@
 ﻿using Sandbox.ModAPI;
 using System;
 using System.IO;
+using VRage.Utils;
 
 namespace Prospector2
 {
@@ -69,12 +70,19 @@ namespace Prospector2
 
         internal static void Close()
         {
-            var message = $"{DateTime.Now:dd-MM-yy HH-mm-ss} - Logging Stopped";
-            TextWriter.WriteLine(message);
+            try
+            {
+                var message = $"{DateTime.Now:dd-MM-yy HH-mm-ss} - Logging Stopped";
+                TextWriter.WriteLine(message);
 
-            TextWriter.Flush();
-            TextWriter.Close();
-            TextWriter.Dispose();
+                TextWriter.Flush();
+                TextWriter.Close();
+                TextWriter.Dispose();
+            }
+            catch (Exception e)
+            {
+                MyLog.Default.WriteLine($"{Session.modName} error closing log: \n {e}");
+            }
         }
 
         internal static void LogException(Exception ex)
