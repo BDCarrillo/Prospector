@@ -24,7 +24,7 @@ namespace Prospector2
             else if (entity is IMyOreDetector && !controlInit)
             {
                 controlInit = true;
-                CreateTerminalControls<IMyOreDetector>();
+                MyAPIGateway.Utilities.InvokeOnGameThread(() => CreateTerminalControls<IMyOreDetector>());
             }
         }
 
