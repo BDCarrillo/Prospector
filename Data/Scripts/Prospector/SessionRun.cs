@@ -128,7 +128,7 @@ namespace Prospector2
         {
             if (client)
             {
-                //SaveScans(true);
+                SaveScans(true);
                 if (hudAPI != null)
                     hudAPI.Unload();
 

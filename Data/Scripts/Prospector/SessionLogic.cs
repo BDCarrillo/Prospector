@@ -283,6 +283,7 @@ namespace Prospector2
                         formattedName = matDef.MinedOre;
                     }
                     oreTagMap.Add(matDef.MinedOre, formattedName);
+                    Log.Line($"{modName} loaded MinedOre: {matDef.MinedOre} with shorthand tag: {formattedName}");
                 }
             }
         }

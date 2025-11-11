@@ -113,11 +113,12 @@ namespace Digi.NetworkProtobufProspector
                     }
                     if (OreTags.Count > 0)
                     {
+                        Log.Line($"{Session.modName} Received {OreTags.Count} custom ore tags from server");
                         foreach (var type in OreTags)
                         {
                             Session.oreTagMap[type.Key] = type.Value;
+                            Log.Line($"{Session.modName} Added Mined Ore {type.Key} with shorthand tag {type.Value} from server");
                         }
-                        Log.Line($"{Session.modName} Received {OreTags.Count} custom ore tags from server");
                     }
                 }
                 catch (Exception e)
