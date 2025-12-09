@@ -26,7 +26,7 @@ namespace Prospector2
                     {
                         var viewProjectionMat = Session.Camera.ViewMatrix * Session.Camera.ProjectionMatrix * 1.1;
                         var camMat = Session.Camera.WorldMatrix;
-                        var FirstPersonView = Session.IsCameraControlledObject && Session.CameraController.IsInFirstPersonView;
+                        var FirstPersonView = (Session.IsCameraControlledObject && Session.CameraController.IsInFirstPersonView) || Session.CameraController.Entity is IMyCameraBlock;
                         var entBlock = Session.Player.Controller.ControlledEntity.Entity as IMyCubeBlock;
                         var scanCenter = controlledGrid.GridIntegerToWorld(entBlock.Position + entBlock.PositionComp.LocalMatrixRef.Up * entBlock.CubeGrid.LocalVolume.Radius * 0.6f / controlledGrid.GridSize);                        
                         Vector3D scanCenterScreenCoords = FirstPersonView ? Vector3D.Zero : Vector3D.Transform(scanCenter, viewProjectionMat);

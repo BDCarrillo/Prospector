@@ -50,6 +50,15 @@ namespace Prospector2
                 subTypeID = "LargeOreDetector",
                 scanFOV = 15};
             defaultList.Add(largeScanner);
+            var largeScannerReskin = new ScannerConfig()
+            {
+                scansPerTick = 1200,
+                scanDistance = 10000,
+                scanSpacing = 4,
+                subTypeID = "LargeOreDetectorReskin",
+                scanFOV = 15
+            };
+            defaultList.Add(largeScannerReskin);
             var smallScanner = new ScannerConfig() {
                 scansPerTick = 200,
                 scanDistance = 5000,
@@ -57,6 +66,15 @@ namespace Prospector2
                 subTypeID = "SmallBlockOreDetector",
                 scanFOV = 5};
             defaultList.Add(smallScanner);
+            var smallScannerReskin = new ScannerConfig()
+            {
+                scansPerTick = 200,
+                scanDistance = 5000,
+                scanSpacing = 12,
+                subTypeID = "SmallOreDetectorReskin",
+                scanFOV = 5
+            };
+            defaultList.Add(smallScannerReskin);
             TextWriter writer;
             writer = MyAPIGateway.Utilities.WriteFileInWorldStorage(scannerCfg, typeof(ScannerConfig));
             writer.Write(MyAPIGateway.Utilities.SerializeToXML(defaultList));

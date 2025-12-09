@@ -71,10 +71,20 @@ namespace Prospector2
             var newGrid = newBlock?.CubeGrid;
             var oldBlock = previousEnt as IMyCubeBlock;
             var oldGrid = oldBlock?.CubeGrid;
-
+            var clear = false;
             if (newEnt is IMyCharacter)
             {
                 controlledGrid = null;
+                clear = true;
+            }
+            else if (newGrid != null)
+            {
+                controlledGrid = (MyCubeGrid)newGrid;
+                if(newGrid != oldGrid)
+                    clear = true;
+            }
+            if (clear)
+            {
                 SaveScans(false);
                 voxelScans.Dictionary.Clear();
                 HudCycleVisibility(false);
@@ -86,15 +96,6 @@ namespace Prospector2
                 currentScanner = null;
                 currentScannerActive = false;
                 currentScannerConfig = null;
-            }
-            else if (newGrid != null)
-            {
-                controlledGrid = (MyCubeGrid)newGrid;
-                if(newGrid != oldGrid)
-                {
-                    SaveScans(false);
-                    voxelScans.Dictionary.Clear();
-                }
             }
             UpdateLists();
         }
