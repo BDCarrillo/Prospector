@@ -174,8 +174,11 @@ namespace Prospector2
                 expandedMode = false;
                 HudCycleVisibility(expandedMode);
             }
-            scanRing.Visible = currentScannerActive;
-            scanRing2.Visible = currentScannerActive;
+            if (hudObjectsRegistered && hudAPI.Heartbeat)
+            {
+                scanRing.Visible = currentScannerActive;
+                scanRing2.Visible = currentScannerActive;
+            }
             UpdateLists();
         }
     }

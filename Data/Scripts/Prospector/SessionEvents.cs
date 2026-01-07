@@ -89,8 +89,11 @@ namespace Prospector2
                 voxelScans.Dictionary.Clear();
                 HudCycleVisibility(false);
                 expandedMode = false;
-                scanRing.Visible = false;
-                scanRing2.Visible = false;
+                if (hudObjectsRegistered && hudAPI.Heartbeat)
+                {
+                    scanRing.Visible = false;
+                    scanRing2.Visible = false;
+                }
                 if (currentScanner != null)
                     currentScanner.OnMarkForClose -= Detector_OnMarkForClose;
                 currentScanner = null;
@@ -115,8 +118,11 @@ namespace Prospector2
             {
                 expandedMode = false;
                 HudCycleVisibility(expandedMode);
-                scanRing.Visible = false;
-                scanRing2.Visible = false;
+                if (hudObjectsRegistered && hudAPI.Heartbeat)
+                {
+                    scanRing.Visible = false;
+                    scanRing2.Visible = false;
+                }
                 currentScannerActive = false;
             }
         }
