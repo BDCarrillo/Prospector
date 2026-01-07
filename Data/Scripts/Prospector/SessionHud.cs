@@ -55,18 +55,21 @@ namespace Prospector2
 
         private void HudCycleVisibility(bool visible)
         {
-            scanRing.Visible = !visible;
-            scanRing2.Visible = !visible;
-            title.Visible = visible;
-            message.Visible = visible;
-            topLeft.Visible = visible;
-            topRight.Visible = visible;
-            botRight.Visible = visible;
-            botLeft.Visible = visible;
-            texture.Visible = visible;
-            scanLine.Visible = visible;
-            if (!visible)
-                scanLine.Offset = Vector2D.Zero;
+            if (hudObjectsRegistered && hudAPI.Heartbeat)
+            {
+                scanRing.Visible = !visible;
+                scanRing2.Visible = !visible;
+                title.Visible = visible;
+                message.Visible = visible;
+                topLeft.Visible = visible;
+                topRight.Visible = visible;
+                botRight.Visible = visible;
+                botLeft.Visible = visible;
+                texture.Visible = visible;
+                scanLine.Visible = visible;
+                if (!visible)
+                    scanLine.Offset = Vector2D.Zero;
+            }
         }
     }
 }
