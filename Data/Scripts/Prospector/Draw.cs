@@ -172,7 +172,7 @@ namespace Prospector2
                                         for (int i = 0; i < currentScannerConfig.scansPerTick; i++) //Iterate spaces and check for ore
                                         {
                                             var nextScanPos = new Vector3D(scanData.nextScanPosX, scanData.nextScanPosY, scanData.nextScanPosZ);
-                                            if ((Vector3I)nextScanPos == voxel.StorageMax)
+                                            if ((Vector3I)nextScanPos == voxel.StorageMax || scanData.scanPercent >= 1)
                                             {
                                                 scanData.scanPercent = 1;
                                                 break;
