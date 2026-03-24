@@ -105,7 +105,7 @@ namespace Prospector2
                                 foreach (var ore in rollupList)
                                 {
                                     var amount = Math.Round((double)ore.Value / foundOre * 100, 2);
-                                    var info = $"  {ore.Key} {(amount > 0.00d ? amount + " %" : "- Trace")}";
+                                    var info = $"  {oreDisplayName[ore.Key]} {(amount > 0.00d ? amount + " %" : "- Trace")}";
                                     textList.Add(info);
                                 }
                             }
@@ -329,7 +329,7 @@ namespace Prospector2
             {
                 var amount = Math.Round((double)ore.Value / scanData.foundore * 100, 2);
                 var text = amount > 0.00d ? amount + " %" : "Trace";
-                info.AppendLine($"  {text} {ore.Key}");
+                info.AppendLine($"  {text} {oreDisplayName[ore.Key]}");
             }
             var labelposition = new Vector2D(screenCoords.X, screenCoords.Y);
             var shadowOffset = new Vector2D(0.003, -0.003);

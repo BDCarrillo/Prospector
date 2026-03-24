@@ -156,6 +156,7 @@ namespace Prospector2
             currentScanner = null;
             voxelScanMemory.scans.Dictionary.Clear();
             controlledGrid = null; 
+            oreDisplayName.Clear();
             Log.Close();
         }
         public override void SaveData()

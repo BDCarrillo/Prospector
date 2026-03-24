@@ -58,11 +58,14 @@ namespace Prospector2
             voxelScans.Dictionary.Clear();
             HudCycleVisibility(false);
             expandedMode = false;
-            scanRing.Visible = false;
-            scanRing2.Visible = false;
             currentScanner = null;
             currentScannerActive = false;
             currentScannerConfig = null;
+            if (hudAPI != null && hudAPI.Heartbeat)
+            {
+                scanRing.Visible = false;
+                scanRing2.Visible = false;
+            }
         }
 
         private void GridChange(VRage.Game.ModAPI.Interfaces.IMyControllableEntity previousEnt, VRage.Game.ModAPI.Interfaces.IMyControllableEntity newEnt)

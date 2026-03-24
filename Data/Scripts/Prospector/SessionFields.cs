@@ -20,6 +20,7 @@ namespace Prospector2
         public static bool rcvdSettings = false;
         public static bool registeredController;
         public static Dictionary<string, string> oreTagMap = new Dictionary<string, string>();
+        public static Dictionary<string, string> oreDisplayName = new Dictionary<string, string>();
         public static string serverName = "";
         public static string modName = "[Prospector2]";
 

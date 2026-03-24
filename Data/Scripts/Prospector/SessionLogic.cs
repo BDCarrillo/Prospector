@@ -8,6 +8,7 @@ using VRageMath;
 using VRage.Voxels;
 using Draygo.API;
 using System.Text;
+using VRage.Game;
 
 
 namespace Prospector2
@@ -265,25 +266,38 @@ namespace Prospector2
             {
                 if (matDef == null || !matDef.CanBeHarvested || !matDef.SpawnsInAsteroids || matDef.MinedOre == null || !matDef.IsRare)
                     continue;
+
+                    MyPhysicalItemDefinition oreDef = MyDefinitionManager.Static.GetPhysicalItemDefinition(
+                    new MyDefinitionId(typeof(MyObjectBuilder_Ore), matDef.MinedOre));  // SubtypeId 
+                    string localizedName = oreDef?.DisplayNameText ?? "Unknown";
+
+                if (!oreDisplayName.ContainsKey(matDef.MinedOre))
+                    oreDisplayName[matDef.MinedOre] = localizedName;
                 if (!oreTagMap.ContainsKey(matDef.MinedOre))
                 {
                     var formattedName = "";
-                    //Better Stone formatting
-                    if (matDef.MinedOre.Contains("(") && matDef.MinedOre.Contains(")"))
+                    if (localizedName.Contains("(") && localizedName.Contains(")"))  //Better Stone formatting
+
                     {
-                        var trimmed = matDef.MinedOre.Remove(0, matDef.MinedOre.IndexOf('(') + 1);
+                        var trimmed = localizedName.Remove(0, localizedName.IndexOf('(') + 1);
                         var final = trimmed.TrimEnd(new char[] { ')', ' ' });
                         formattedName = final;
                     }
+                    else if (localizedName.Contains("[") && localizedName.Contains("]"))  //Real Minerals formatting
+                    {
+                        var trimmed = localizedName.Remove(0, localizedName.IndexOf('[') + 1);
+                        var final = trimmed.TrimEnd(new char[] { ']', ' ' });
+                        formattedName = final;
+                    }
                     else if (oreDefaults.ContainsKey(matDef.MinedOre))
-                        formattedName = oreDefaults[matDef.MinedOre]; 
+                        formattedName = oreDefaults[matDef.MinedOre];
                     else
                     {
-                        Log.Line($"{modName} Asteroid spawnable ore type found without a linked shorthand for {matDef.MinedOre}");
+                        Log.Line($"{modName} Asteroid spawnable ore type found without a linked shorthand for {localizedName}");
                         formattedName = matDef.MinedOre;
                     }
                     oreTagMap.Add(matDef.MinedOre, formattedName);
-                    Log.Line($"{modName} loaded MinedOre: {matDef.MinedOre} with shorthand tag: {formattedName}");
+                    Log.Line($"{modName} loaded MinedOre: {localizedName} with shorthand tag: {formattedName}");
                 }
             }
         }
