@@ -82,7 +82,7 @@ namespace Prospector2
                                             maxDist = dist;
 
                                         foundOre += scanData.foundore;
-                                        volume += scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000000d;
+                                        volume += scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000d;
                                         foreach (var ore in scanData.ore.Dictionary)
                                         {
                                             if (rollupList.ContainsKey(ore.Key))
@@ -110,7 +110,7 @@ namespace Prospector2
                                 }
                             }
                             var finalText = new StringBuilder();
-                            var stringVol = volume.ToString("0.00") + " km^3";
+                            var stringVol = volume.ToString("0.00") + "k m^3";
                             if (textList.Count > 0)
                             {
                                 textList.Sort();
@@ -283,7 +283,7 @@ namespace Prospector2
                 info += $"{text} {ore.Key}\n";
                 gpsName += " " + oreTagMap[ore.Key];
             }
-            var volume = (scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000000d).ToString("0.00") + " km^3";
+            var volume = (scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000d).ToString("0.00") + "k m^3";
             if (Settings.Instance.gpsIncludeVol) gpsName += " " + volume;
             info += $"Scanned material: {volume}";
             if (scanData.scanPercent != 1)
@@ -322,8 +322,8 @@ namespace Prospector2
             info.AppendLine($"  {scanData.scanSpacing}m Scan");
             if (scanData.scanPercent == 1)
             {
-                var volume = scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000000d;
-                info.AppendLine($"  {volume.ToString("0.00")} km^3");
+                var volume = scanData.foundore * scanData.scanSpacing * scanData.scanSpacing * scanData.scanSpacing / 1000000d;
+                info.AppendLine($"  {volume.ToString("0.00")}k m^3");
             }
             foreach (var ore in scanData.ore.Dictionary)
             {
