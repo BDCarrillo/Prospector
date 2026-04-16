@@ -12,20 +12,37 @@ namespace Prospector2
     {
         private void OnEntityCreate(MyEntity entity)
         {
-            if(entity is MyVoxelBase && !(entity is MyPlanet))
+            if(entity is MyVoxelBase)
             {
-                var roid = entity as MyVoxelBase;
-                if (roid.BoulderInfo != null)
-                    return;
-                
-                roid.OnMarkForClose += Roid_OnMarkForClose;
-                newRoids.TryAdd(roid, 0);
+                if (entity is MyPlanet)
+                {
+                    var planet = entity as MyPlanet;
+                    planetMap.Add(planet);
+                    planet.OnMarkForClose += Planet_OnMarkForClose;
+                   
+                }
+                else
+                {
+                    var roid = entity as MyVoxelBase;
+                    if (roid.BoulderInfo != null)
+                        return;
+
+                    roid.OnMarkForClose += Roid_OnMarkForClose;
+                    newRoids.TryAdd(roid, 0);
+                }
             }
             else if (entity is IMyOreDetector && !controlInit)
             {
                 controlInit = true;
                 MyAPIGateway.Utilities.InvokeOnGameThread(() => CreateTerminalControls<IMyOreDetector>());
             }
+        }
+
+        private void Planet_OnMarkForClose(MyEntity obj)
+        {
+            var planet = obj as MyPlanet;
+            planet.OnMarkForClose -= Planet_OnMarkForClose;
+            planetMap.Remove(planet);
         }
 
         private void Roid_OnMarkForClose(MyEntity obj)
@@ -53,7 +70,6 @@ namespace Prospector2
         {
             var scanner = obj as IMyOreDetector;
             scanner.OnMarkForClose -= Detector_OnMarkForClose;
-            //TODO Verify
             SaveScans(false);
             voxelScans.Dictionary.Clear();
             HudCycleVisibility(false);

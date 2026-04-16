@@ -53,6 +53,10 @@ namespace Prospector2
         {
             return scannerTypes.ContainsKey(block.BlockDefinition.SubtypeId);
         }
+        public static bool Enabled(IMyTerminalBlock block)
+        {
+            return scannerTypes.ContainsKey(block.BlockDefinition.SubtypeId);
+        }
         internal bool GetActivated(IMyTerminalBlock block)
         {
             return block == currentScanner && currentScannerActive;
@@ -87,7 +91,7 @@ namespace Prospector2
             action.Name = new StringBuilder("Toggle data review mode");
             action.Action = ToggleDataView;
             action.Writer = DataViewActionWriter;
-            action.Enabled = VisibleTrue;
+            action.Enabled = Enabled;
             return action;
         }
         internal void DataViewActionWriter(IMyTerminalBlock block, StringBuilder builder)
@@ -96,7 +100,11 @@ namespace Prospector2
         }
         internal void ToggleDataView(IMyTerminalBlock block)
         {
-            if (block == currentScanner && currentScannerActive)
+            if (planetSuppress)
+            {
+                MyAPIGateway.Utilities.ShowNotification($"Prospector 2 disabled due to planet proximity", 2000, "Red");
+            }
+            else if (block == currentScanner && currentScannerActive)
             {
                 expandedMode = !expandedMode;
                 HudCycleVisibility(expandedMode);
@@ -109,7 +117,7 @@ namespace Prospector2
             action.Name = new StringBuilder("Reset scan data for asteroids at aim point");
             action.Action = ResetScanData;
             action.Writer = ResetScanActionWriter;
-            action.Enabled = VisibleTrue;
+            action.Enabled = Enabled;
             return action;
         }
         internal void ResetScanActionWriter(IMyTerminalBlock block, StringBuilder builder)
@@ -118,7 +126,8 @@ namespace Prospector2
         }
         internal void ResetScanData(IMyTerminalBlock block)
         {
-            queueReScan = true;
+            if (!planetSuppress)
+                queueReScan = true;
         }
         internal IMyTerminalAction CreateActiveScanAction<T>() where T : IMyOreDetector
         {
@@ -127,7 +136,7 @@ namespace Prospector2
             action.Name = new StringBuilder("Toggle active scanning");
             action.Action = ToggleActiveScan;
             action.Writer = ActiveScanActionWriter;
-            action.Enabled = VisibleTrue;
+            action.Enabled = Enabled;
             return action;
         }
         internal void ActiveScanActionWriter(IMyTerminalBlock block, StringBuilder builder)
@@ -145,7 +154,7 @@ namespace Prospector2
             action.Name = new StringBuilder("Add GPS for asteroid at aim point");
             action.Action = GPSTagAction;
             action.Writer = GPSTagActionWriter;
-            action.Enabled = VisibleTrue;
+            action.Enabled = Enabled;
             return action;
         }
         internal void GPSTagActionWriter(IMyTerminalBlock block, StringBuilder builder)
@@ -158,26 +167,33 @@ namespace Prospector2
         }
         internal void UpdateScannerState(IMyTerminalBlock block)
         {
-            if (currentScanner != block)
+            if (planetSuppress)
             {
-                var detector = (IMyOreDetector)block;
-                currentScanner = detector;
-                currentScannerConfig = scannerTypes[block.BlockDefinition.SubtypeId];
-                detector.IsWorkingChanged += OreDetector_IsWorkingChanged;
-                detector.OnMarkForClose += Detector_OnMarkForClose;
-                //Calc FOV limit to something usable for DOT comparison
-                currentScannerFOVLimit = Math.Cos(currentScannerConfig.scanFOV * 0.01745329251);
+                MyAPIGateway.Utilities.ShowNotification($"Prospector 2 disabled due to planet proximity", 2000, "Red");
             }
-            currentScannerActive = !currentScannerActive;
-            if (!currentScannerActive)
+            else
             {
-                expandedMode = false;
-                HudCycleVisibility(expandedMode);
-            }
-            if (hudObjectsRegistered && hudAPI.Heartbeat)
-            {
-                scanRing.Visible = currentScannerActive;
-                scanRing2.Visible = currentScannerActive;
+                if (currentScanner != block)
+                {
+                    var detector = (IMyOreDetector)block;
+                    currentScanner = detector;
+                    currentScannerConfig = scannerTypes[block.BlockDefinition.SubtypeId];
+                    detector.IsWorkingChanged += OreDetector_IsWorkingChanged;
+                    detector.OnMarkForClose += Detector_OnMarkForClose;
+                    //Calc FOV limit to something usable for DOT comparison
+                    currentScannerFOVLimit = Math.Cos(currentScannerConfig.scanFOV * 0.01745329251);
+                }
+                currentScannerActive = !currentScannerActive;
+                if (!currentScannerActive)
+                {
+                    expandedMode = false;
+                    HudCycleVisibility(expandedMode);
+                }
+                if (hudObjectsRegistered && hudAPI.Heartbeat)
+                {
+                    scanRing.Visible = currentScannerActive;
+                    scanRing2.Visible = currentScannerActive;
+                }
             }
             UpdateLists();
         }

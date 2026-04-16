@@ -6,9 +6,8 @@ using System.IO;
 using Sandbox.Definitions;
 using VRageMath;
 using VRage.Voxels;
-using Draygo.API;
-using System.Text;
 using VRage.Game;
+using Sandbox.Game.Entities;
 
 
 namespace Prospector2
@@ -17,136 +16,60 @@ namespace Prospector2
     {
         private void UpdateLists()
         {
-            try
+            if (controlledGrid != null)
             {
-                if (controlledGrid != null)
-                { 
-                    //Check if in grav (mostly to suppress symbology through the planet)
-                    if (controlledGrid.NaturalGravity.LengthSquared() > 4)
-                    {
-                        var oldPlanetSuppress = planetSuppress;
-                        if (!oldPlanetSuppress && !(Settings.Instance.hideAsteroids || currentScanner == null))
-                            MyAPIGateway.Utilities.ShowNotification("Prospector2 shutting down due to gravity > 0.2");
-                        planetSuppress = true;
-                    }
-                    else
-                        planetSuppress = false;
+                var gridPos = controlledGrid.PositionComp.WorldVolume.Center;
+                MyPlanet closestPlanet = null;
+                double closestDist = double.MaxValue;
 
-                    //Pull in new 'roid data
-                    if (!Settings.Instance.hideAsteroids && currentScanner != null && currentScannerActive)
+                foreach (var planet in planetMap)
+                {
+                    var planetDist = planet.HasAtmosphere ? planet.AtmosphereRadius : planet.MaximumRadius;
+                    planetDist *= planetDist;
+                    var dist = Vector3D.DistanceSquared(gridPos, planet.PositionComp.WorldVolume.Center);
+                    if (dist < planetDist && dist < closestDist)
                     {
-                        foreach (var objRoid in newRoids.Keys) 
+                        closestDist = dist;
+                        closestPlanet = planet;
+                    }
+                }
+
+                if (closestPlanet != null)
+                {
+                    var oldPlanetSuppress = planetSuppress;
+                    if (!oldPlanetSuppress && !(Settings.Instance.hideAsteroids || currentScanner == null))
+                        MyAPIGateway.Utilities.ShowNotification("Prospector2 shutting down due to planet proximity", 2000, "Red");
+                    planetSuppress = true;
+                    currentScannerActive = false;
+                    expandedMode = false;
+                    HudForceVisibility(false);
+                }
+                else
+                    planetSuppress = false;
+                //Pull in new 'roid data
+                if (!Settings.Instance.hideAsteroids && currentScanner != null && currentScannerActive)
+                {
+                    foreach (var objRoid in newRoids.Keys) 
+                    {
+                        if (voxelScans.Dictionary.ContainsKey(objRoid))
+                            continue;
+                        else if (voxelScanMemory.scans.Dictionary.ContainsKey(objRoid.EntityId))
+                            voxelScans.Dictionary.Add(objRoid, voxelScanMemory.scans.Dictionary[objRoid.EntityId]);
+                        else
                         {
-                            if (voxelScans.Dictionary.ContainsKey(objRoid))
-                                continue;
-                            else if (voxelScanMemory.scans.Dictionary.ContainsKey(objRoid.EntityId))
-                                voxelScans.Dictionary.Add(objRoid, voxelScanMemory.scans.Dictionary[objRoid.EntityId]);
-                            else
-                            {
-                                var scan = new VoxelScan();
-                                scan.size = (objRoid.StorageMax.X / currentScannerConfig.scanSpacing + 1) * (objRoid.StorageMax.Y / currentScannerConfig.scanSpacing + 1) * (objRoid.StorageMax.Z / currentScannerConfig.scanSpacing + 1);
-                                scan.nextScanPosX = objRoid.StorageMin.X;
-                                scan.nextScanPosY = objRoid.StorageMin.Y;
-                                scan.nextScanPosZ = objRoid.StorageMin.Z;
-                                scan.scanSpacing = currentScannerConfig.scanSpacing;
-                                scan.ore = new SerializableDictionary<string, int>();
-                                voxelScans.Dictionary.Add(objRoid, scan);
-                            }
+                            var scan = new VoxelScan();
+                            scan.size = (objRoid.StorageMax.X / currentScannerConfig.scanSpacing + 1) * (objRoid.StorageMax.Y / currentScannerConfig.scanSpacing + 1) * (objRoid.StorageMax.Z / currentScannerConfig.scanSpacing + 1);
+                            scan.nextScanPosX = objRoid.StorageMin.X;
+                            scan.nextScanPosY = objRoid.StorageMin.Y;
+                            scan.nextScanPosZ = objRoid.StorageMin.Z;
+                            scan.scanSpacing = currentScannerConfig.scanSpacing;
+                            scan.ore = new SerializableDictionary<string, int>();
+                            voxelScans.Dictionary.Add(objRoid, scan);
                         }
                     }
                 }
             }
-            catch (Exception e)
-            {
-                MyAPIGateway.Utilities.ShowNotification($"{modName}  Well something went wrong in Update {e}");
-                Log.Line($"{modName} Well something went wrong in Update {e}");
-            }
         }
-
-        private void DigiMode2()
-        {
-            if (boundsScan == null || boundsScan.MarkedForClose || boundsScan.Closed)
-                return;
-            /*
-            switch (boundsScan.Storage.Size.X)
-            {
-                case 64:
-                    LOD = 0;
-                    break;
-                case 128:
-                    LOD = 0;
-                    break;
-                case 256:
-                    LOD = 0;
-                    break;
-                case 512:
-                    LOD = 0;
-                    break;
-                case 1024:
-                    LOD = 1;
-                    break;
-                case 2048:
-                    LOD = 2;
-                    break;
-            }
-            */
-            int LOD = 3;
-
-            Vector3I start = boundsScan.StorageMin >> LOD;
-            Vector3I end = (boundsScan.StorageMax >> LOD) - 1;
-            int cellSize = (1 << LOD);
-            float cellSizeHalf = cellSize * 0.5f;
-
-            MyStorageData temp = new MyStorageData(MyStorageDataTypeFlags.ContentAndMaterial);
-            temp.Resize(start, end);
-
-            boundsScan.Storage.ReadRange(temp, MyStorageDataTypeFlags.ContentAndMaterial, LOD, start, end);
-
-            bool bbValid = false;
-            BoundingBox contentBB = BoundingBox.CreateInvalid();
-
-            for (int i = 0; i < temp.SizeLinear; i++)
-            {
-                var content = temp[MyStorageDataTypeEnum.Content][i];
-                
-                Vector3I pos;
-                temp.ComputePosition(i, out pos);
-                pos += start;
-                pos <<= LOD; // turn into real voxel coords
-
-                Vector3 localPos = pos;
-                localPos -= boundsScan.SizeInMetresHalf; // worldmatrix.Translation is boundingbox center, shift positions accordingly
-                localPos += cellSizeHalf; // shift to center of the cell
-
-                if (content > MyVoxelConstants.VOXEL_ISO_LEVEL)
-                {
-                    contentBB.Include(localPos);
-                    bbValid = true;
-                    var material = temp[MyStorageDataTypeEnum.Material][i];
-                    var voxelDef = MyDefinitionManager.Static.GetVoxelMaterialDefinition(material);
-                    if (voxelDef != null && voxelDef.MinedOre != "Stone")
-                    {
-                        Log.Line($"{voxelDef.MinedOre}");
-                        //fun draws
-                        float contentRatio = content / 255f;
-                        Vector3D world = Vector3D.Transform(localPos, boundsScan.WorldMatrix);
-                        float radius = cellSizeHalf * 10;
-                        //MyTransparentGeometry.AddPointBillboard(solidCircle, Color.Red * 3f, world, radius, 0f, -1, MyBillboard.BlendTypeEnum.AdditiveTop);
-
-                        var camMat = Session.Camera.WorldMatrix;
-                        var ore = new HudAPIv2.SpaceMessage(new StringBuilder($"<color=255,0,0> {voxelDef.MinedOre}"), world, camMat.Up, camMat.Left, 50);
-                    }
-                }
-            }
-            
-            if (bbValid)
-            {
-                Vector3D min = Vector3D.Transform(contentBB.Min, boundsScan.WorldMatrix);
-                Vector3D worldCenter = Vector3D.Transform(contentBB.Center, boundsScan.WorldMatrix);
-                var radius = Vector3D.Distance(worldCenter, min);
-            }
-        }
-
         private void ProcessBoundsDigified()
         {
             //Thanks to Digi (once again) for this

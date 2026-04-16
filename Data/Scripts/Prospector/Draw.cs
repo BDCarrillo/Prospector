@@ -7,6 +7,7 @@ using System.Text;
 using VRage.Game.ModAPI;
 using System.Collections.Generic;
 using Sandbox.Game.Entities;
+using VRage.Game;
 
 namespace Prospector2
 {
@@ -167,7 +168,7 @@ namespace Prospector2
                                     if (currentScannerConfig.scanSpacing < scanData.scanSpacing) //Reset data to use a more precise scanner
                                         ResetData(ref scanData, ref voxel);
                                     var offset = voxel.PositionComp.WorldVolume.Center - voxel.PositionLeftBottomCorner; //Pushes the storage checks to bottom left corner as all storage is positive, world matrix refs center
-                                    if (scanData.scanPercent < 1)
+                                    if (!MyParticlesManager.Paused && scanData.scanPercent < 1)
                                     {
                                         for (int i = 0; i < currentScannerConfig.scansPerTick; i++) //Iterate spaces and check for ore
                                         {

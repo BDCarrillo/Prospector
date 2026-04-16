@@ -23,7 +23,9 @@ namespace Prospector2
         public static Dictionary<string, string> oreDisplayName = new Dictionary<string, string>();
         public static string serverName = "";
         public static string modName = "[Prospector2]";
+        public static bool planetSuppress = true;
 
+        internal List<MyPlanet> planetMap = new List<MyPlanet>();
         internal Dictionary<string, string> oreTagMapCustom = new Dictionary<string, string>();
         internal ConcurrentDictionary<MyVoxelBase, byte> newRoids = new ConcurrentDictionary<MyVoxelBase, byte>();
         internal SerializableDictionary<MyVoxelBase, VoxelScan> voxelScans = new SerializableDictionary<MyVoxelBase, VoxelScan>();
@@ -42,7 +44,6 @@ namespace Prospector2
         internal bool controlInit;
         internal bool queueReScan;
         internal bool queueGPSTag;
-        internal bool planetSuppress = true;
         internal bool server;
         internal bool client;
         internal bool mpActive;
@@ -101,10 +102,5 @@ namespace Prospector2
             {"Titanium", "Ti"},
             {"Tantalum", "Ta"},
         };
-
-        private void Clean()
-        {
-
-        }
     }
 }

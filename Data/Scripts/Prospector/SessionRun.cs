@@ -157,6 +157,7 @@ namespace Prospector2
             voxelScanMemory.scans.Dictionary.Clear();
             controlledGrid = null; 
             oreDisplayName.Clear();
+            planetMap.Clear();
             Log.Close();
         }
         public override void SaveData()
